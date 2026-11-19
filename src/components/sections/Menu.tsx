@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
+  getMenuItem3dImage,
+  getMenuItemPhoto,
   menuCategories,
   menuItems,
   type MenuCategoryId,
@@ -40,37 +42,82 @@ function MenuItemCard({ item, locale }: { item: MenuItem; locale: Locale }) {
     window.setTimeout(() => setJustAdded(false), 1400);
   };
 
+  const image3d = getMenuItem3dImage(item);
+  const photo = image3d ? undefined : getMenuItemPhoto(item);
+  const hasVisual = Boolean(image3d || photo);
+  const altText = `${item.name[locale]} — ${item.ingredients[locale]}`;
+
   return (
     <li
       id={`menu-item-${item.id}`}
       data-testid={`menu-item-${item.id}`}
-      className="card-surface flex flex-col justify-between rounded-[24px] border border-[#1A1512]/10 bg-[#FAF5ED] p-5 text-[#1A1512] shadow-sm transition-shadow hover:shadow-md"
+      className="pizza-card card-surface flex flex-col justify-between rounded-[24px] border border-[#1A1512]/10 bg-[#FAF5ED] p-5 text-[#1A1512] shadow-sm transition-shadow hover:shadow-md"
     >
       <div>
-        <div className="relative mb-4 aspect-[16/10] w-full overflow-hidden rounded-2xl bg-[#E5D7C3]">
-          <img
-            src={item.image}
-            alt={`${item.name[locale]} — ${item.ingredients[locale]}`}
-            width={480}
-            height={300}
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
-            {item.vegetarian && (
-              <Badge variant="basil">{copy.menuSection.vegetarianBadge}</Badge>
-            )}
+        {image3d && (
+          <div className="pizza-card-visual relative mb-4 aspect-[16/10] w-full rounded-2xl bg-[radial-gradient(ellipse_at_50%_38%,#3A2A1F_0%,#1F1813_55%,#14110F_100%)]">
+            {/* Soft pool of light + contact shadow under the floating pizza */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-[16%] top-[10%] h-[55%] rounded-full bg-[radial-gradient(circle,rgba(241,178,74,0.22)_0%,transparent_70%)]"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-[18%] bottom-[9%] h-[16%] rounded-[50%] bg-black/70 blur-lg"
+            />
+            <img
+              src={image3d}
+              alt={altText}
+              width={640}
+              height={400}
+              loading="lazy"
+              decoding="async"
+              className="relative h-full w-full scale-[1.16] object-contain drop-shadow-[0_14px_14px_rgba(0,0,0,0.55)]"
+            />
+            <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
+              {item.vegetarian && (
+                <Badge variant="basil">{copy.menuSection.vegetarianBadge}</Badge>
+              )}
+            </div>
+            <div className="absolute right-2.5 bottom-2.5 rounded-full bg-[#F9F4EC] px-3.5 py-1 text-sm font-bold text-[#14110F]">
+              {formatCents(displayPriceCents)}
+            </div>
           </div>
-          <div className="absolute right-2.5 bottom-2.5 rounded-full bg-[#14110F]/90 px-3.5 py-1 text-sm font-bold text-[#F9F4EC]">
-            {formatCents(displayPriceCents)}
-          </div>
-        </div>
+        )}
 
-        <div className="mb-2 flex items-start justify-between gap-2">
+        {photo && (
+          <div className="relative mb-4 aspect-[16/10] w-full overflow-hidden rounded-2xl bg-[#E5D7C3]">
+            <img
+              src={photo}
+              alt={altText}
+              width={480}
+              height={300}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute right-2.5 bottom-2.5 rounded-full bg-[#14110F]/90 px-3.5 py-1 text-sm font-bold text-[#F9F4EC]">
+              {formatCents(displayPriceCents)}
+            </div>
+          </div>
+        )}
+
+        <div className="mb-2 flex items-start justify-between gap-3">
           <h3 className="font-serif-heading text-xl font-bold text-[#1A1512]">
             {item.name[locale]}
           </h3>
+          {!hasVisual && (
+            <span className="shrink-0 rounded-full bg-[#14110F] px-3.5 py-1 text-sm font-bold text-[#F9F4EC]">
+              {formatCents(displayPriceCents)}
+            </span>
+          )}
         </div>
+
+        {!hasVisual && item.vegetarian && (
+          <div className="mb-2">
+            <Badge variant="basil">{copy.menuSection.vegetarianBadge}</Badge>
+          </div>
+        )}
 
         <p className="mb-3 text-sm leading-relaxed text-[#574B42]">
           {item.ingredients[locale]}

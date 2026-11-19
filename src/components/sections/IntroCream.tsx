@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { getMenuItemById } from '@/data/menu';
+import { getMenuItem3dImage, getMenuItemById } from '@/data/menu';
 import { getCopy, type Locale } from '@/data/copy';
 import { formatCents } from '@/lib/format';
 import { useBasketStore } from '@/store/basket';
@@ -143,16 +143,21 @@ export function IntroCream({ locale }: IntroCreamProps) {
 
           {/* Card 2 (Middle square, 3 cols): Margarita on wooden board + golden pill button */}
           {itemMargarita && (
-            <article className="featured-card flex flex-col justify-between md:col-span-3">
+            <article className="featured-card pizza-card flex flex-col justify-between md:col-span-3">
               <div>
-                <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-[22px] bg-[#1F1813] shadow-md">
+                <div className="pizza-card-visual relative mb-3 aspect-square w-full overflow-hidden rounded-[22px] bg-[radial-gradient(ellipse_at_50%_40%,#3A2A1F_0%,#1F1813_55%,#14110F_100%)] shadow-md">
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-[14%] bottom-[24%] h-[14%] rounded-[50%] bg-black/70 blur-lg"
+                  />
                   <img
-                    src={itemMargarita.image}
+                    src={getMenuItem3dImage(itemMargarita) ?? itemMargarita.image}
                     alt={`${itemMargarita.name[locale]} — ${itemMargarita.ingredients[locale]}`}
-                    width={540}
-                    height={540}
+                    width={640}
+                    height={400}
                     loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                    decoding="async"
+                    className="relative h-full w-full scale-[1.3] object-contain drop-shadow-[0_14px_14px_rgba(0,0,0,0.55)]"
                   />
                   <span className="absolute right-2.5 bottom-2.5 rounded-full bg-[#14110F]/90 px-3 py-0.5 text-xs font-bold text-[#F9F4EC]">
                     {formatCents(itemMargarita.priceCents)}
@@ -185,16 +190,21 @@ export function IntroCream({ locale }: IntroCreamProps) {
 
           {/* Card 3 (Right square, 3 cols): Prosciutto e Funghi on wooden board + dark charcoal pill button */}
           {itemProsciuttoFunghi && (
-            <article className="featured-card flex flex-col justify-between md:col-span-3">
+            <article className="featured-card pizza-card flex flex-col justify-between md:col-span-3">
               <div>
-                <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-[22px] bg-[#1F1813] shadow-md">
+                <div className="pizza-card-visual relative mb-3 aspect-square w-full overflow-hidden rounded-[22px] bg-[radial-gradient(ellipse_at_50%_40%,#3A2A1F_0%,#1F1813_55%,#14110F_100%)] shadow-md">
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-[14%] bottom-[24%] h-[14%] rounded-[50%] bg-black/70 blur-lg"
+                  />
                   <img
-                    src={itemProsciuttoFunghi.image}
+                    src={getMenuItem3dImage(itemProsciuttoFunghi) ?? itemProsciuttoFunghi.image}
                     alt={`${itemProsciuttoFunghi.name[locale]} — ${itemProsciuttoFunghi.ingredients[locale]}`}
-                    width={540}
-                    height={540}
+                    width={640}
+                    height={400}
                     loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                    decoding="async"
+                    className="relative h-full w-full scale-[1.3] object-contain drop-shadow-[0_14px_14px_rgba(0,0,0,0.55)]"
                   />
                   <span className="absolute right-2.5 bottom-2.5 rounded-full bg-[#14110F]/90 px-3 py-0.5 text-xs font-bold text-[#F9F4EC]">
                     {formatCents(itemProsciuttoFunghi.priceCents)}

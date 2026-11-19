@@ -1038,3 +1038,26 @@ export function getInteractive3dPizzas(): (MenuItem & { pizza3d: Pizza3dConfig }
     (item): item is MenuItem & { pizza3d: Pizza3dConfig } => Boolean(item.pizza3d)
   );
 }
+
+const PIZZETA_3D_SLUGS: Record<string, string> = {
+  'pizzeta-margarita': 'margarita',
+  'pizzeta-pepperoni': 'pepperoni',
+};
+
+/**
+ * Transparent 3D render for a menu item, when one exists. These are single
+ * static images (no scroll animation), so the whole menu can use them cheaply.
+ */
+export function getMenuItem3dImage(item: MenuItem): string | undefined {
+  const slug = item.pizza3d?.slug ?? PIZZETA_3D_SLUGS[item.id];
+  return slug ? `/images/pizzas-3d/pizza-${slug}-v2.webp` : undefined;
+}
+
+/**
+ * A real product photo, if the item has one. Generic storefront / interior
+ * stand-ins are not product photos and are deliberately left out.
+ */
+export function getMenuItemPhoto(item: MenuItem): string | undefined {
+  if (item.placeholder || item.image.startsWith('/images/real/')) return undefined;
+  return item.image;
+}

@@ -40,6 +40,17 @@ html {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
 }
 
+/* Lenis drives the scroll itself: native smooth scrolling on top of it fights
+   every frame and makes the page feel laggy. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+html.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
 body {
   min-height: 100vh;
   overflow-x: hidden;
@@ -96,81 +107,67 @@ h3,
   animation: steamDrift 7s ease-in-out infinite;
 }
 
-/* Respect prefers-reduced-motion: disable continuous animations and smooth scroll */
-@keyframes gustavoWave {
+/* Idle hover of each pizza layer (compositor-only transform) */
+@keyframes pizzaLayerBob {
   0%,
   100% {
-    transform: rotate(-9deg);
+    transform: translate3d(0, -5px, 0);
   }
   50% {
-    transform: rotate(13deg);
+    transform: translate3d(0, 5px, 0);
   }
 }
 
-@keyframes gustavoPeelBob {
+@keyframes scrollCue {
   0%,
   100% {
-    transform: rotate(-2.8deg) translateY(0px);
+    transform: translateY(-3px);
+    opacity: 0.6;
   }
   50% {
-    transform: rotate(3.2deg) translateY(-2.5px);
+    transform: translateY(4px);
+    opacity: 1;
   }
 }
 
-@keyframes gustavoBreathe {
-  0%,
-  100% {
-    transform: translateY(0px) rotate(-0.6deg);
-  }
-  50% {
-    transform: translateY(-2px) rotate(0.7deg);
-  }
-}
-
-@keyframes gustavoBlink {
-  0%,
-  92%,
-  100% {
-    transform: scaleY(1);
-  }
-  96% {
-    transform: scaleY(0.08);
+@keyframes stampSpin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .gustavo-wave-arm {
-    animation: gustavoWave 1.3s ease-in-out infinite;
-    will-change: transform;
+  .pizza-layer-bob {
+    animation: pizzaLayerBob 5.6s ease-in-out infinite;
   }
 
-  .gustavo-peel-arm {
-    animation: gustavoPeelBob 2.6s ease-in-out infinite;
-    will-change: transform;
+  .animate-scroll-cue {
+    animation: scrollCue 1.8s ease-in-out infinite;
   }
 
-  .gustavo-body {
-    animation: gustavoBreathe 3s ease-in-out infinite;
-    will-change: transform;
+  .animate-stamp-spin {
+    animation: stampSpin 22s linear infinite;
+    transform-origin: 50% 50%;
   }
 
-  .gustavo-eyes {
-    animation: gustavoBlink 4.6s ease-in-out infinite;
-    will-change: transform;
+  /* Menu cards: the 3D pizza lifts and turns slightly towards the pointer */
+  .pizza-card-visual img {
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .pizza-card:hover .pizza-card-visual img {
+    transform: translateY(-8px) scale(1.07) rotate(-4deg);
   }
 }
 
+/* Respect prefers-reduced-motion: disable continuous animations and smooth scroll */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
 
   .animate-pizza-float,
-  .animate-steam-drift,
-  .gustavo-wave-arm,
-  .gustavo-peel-arm,
-  .gustavo-body,
-  .gustavo-eyes {
+  .animate-steam-drift {
     animation: none !important;
     transform: none !important;
   }

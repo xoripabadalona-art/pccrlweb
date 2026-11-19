@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { getInteractive3dPizzas } from '@/data/menu';
+import React, { useEffect, useRef, useState } from 'react';
+import { getMenuItemById } from '@/data/menu';
 import { getCopy, type Locale } from '@/data/copy';
 import { formatCents } from '@/lib/format';
 import { useBasketStore } from '@/store/basket';
@@ -10,360 +10,374 @@ export interface ExplodedPizzaProps {
   locale: Locale;
 }
 
+/** The one pizza that gets the full scroll-driven 3D treatment on the homepage. */
+const HERO_PIZZA_ID = 'pizza-pepperoni';
+
+type LayerId = 'toppings' | 'cheese' | 'sauce' | 'crust';
+
+interface LayerSpec {
+  id: LayerId;
+  src: string;
+  /** Rendered width relative to the stack box */
+  widthClass: string;
+  zClass: string;
+  /** Final vertical offset when exploded, in % of the stack box height */
+  explodeY: number;
+  /** Final roll in degrees — a little disorder makes it read as floating */
+  explodeRot: number;
+  /** Parallax depth factor (1 = closest to the camera) */
+  depth: number;
+  bobDelay: string;
+}
+
+// Top → bottom. Only what is actually on a Pepperoni: no basil, no extras.
+const LAYERS: LayerSpec[] = [
+  {
+    id: 'toppings',
+    src: '/images/pizzas-3d/toppings-pepperoni-v2.webp',
+    widthClass: 'w-[92%]',
+    zClass: 'z-40',
+    explodeY: -57,
+    explodeRot: -2.5,
+    depth: 1,
+    bobDelay: '0s',
+  },
+  {
+    id: 'cheese',
+    src: '/images/layer-cheese-v2.webp',
+    widthClass: 'w-[90%]',
+    zClass: 'z-30',
+    explodeY: -19,
+    explodeRot: 1.6,
+    depth: 0.7,
+    bobDelay: '-1.4s',
+  },
+  {
+    id: 'sauce',
+    src: '/images/layer-sauce-v2.webp',
+    widthClass: 'w-[86%]',
+    zClass: 'z-20',
+    explodeY: 19,
+    explodeRot: -1.2,
+    depth: 0.45,
+    bobDelay: '-2.8s',
+  },
+  {
+    id: 'crust',
+    src: '/images/layer-crust-v2.webp',
+    widthClass: 'w-full',
+    zClass: 'z-10',
+    explodeY: 57,
+    explodeRot: 0,
+    depth: 0.25,
+    bobDelay: '-4.2s',
+  },
+];
+
 export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
   const copy = getCopy(locale);
-  const pizzas = getInteractive3dPizzas();
+  const pizza = getMenuItemById(HERO_PIZZA_ID);
   const addItem = useBasketStore((s) => s.addItem);
   const openDrawer = useBasketStore((s) => s.openDrawer);
 
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [swipeDir, setSwipeDir] = useState<'left' | 'right' | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
 
   const sectionRef = useRef<HTMLElement>(null);
-  const pinContainerRef = useRef<HTMLDivElement>(null);
-  const topHeaderRef = useRef<HTMLDivElement>(null);
+  const pinRef = useRef<HTMLDivElement>(null);
+  const introRef = useRef<HTMLDivElement>(null);
+  const stackRef = useRef<HTMLDivElement>(null);
+  const assembledRef = useRef<HTMLDivElement>(null);
+  const shadowRef = useRef<HTMLDivElement>(null);
+  const stampRef = useRef<HTMLDivElement>(null);
+  const outroRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLSpanElement>(null);
 
-  // Assembled 3D pizza (visible at scroll = 0, dissolves as the 5 true ingredient layers separate apart)
-  const assembledPizzaRef = useRef<HTMLDivElement>(null);
-
-  // The 5 true ingredient layers (NO second pizza crust at the top!):
-  // 1. Fresh Basil Leaves (Top)
-  // 2. Specific Pizza Toppings (Upper-Middle — e.g. ONLY pepperoni for Pepperoni, NO mushrooms!)
-  // 3. Melted Bubbling Mozzarella Sheet (Middle)
-  // 4. Tomato Sauce or White Cream Base (Lower-Middle)
-  // 5. 48h Fermented Artisan Dough Crust (Bottom)
-  const layerBasilRef = useRef<HTMLDivElement>(null);
-  const layerToppingsRef = useRef<HTMLDivElement>(null);
-  const layerCheeseRef = useRef<HTMLDivElement>(null);
-  const layerSauceRef = useRef<HTMLDivElement>(null);
-  const layerDoughRef = useRef<HTMLDivElement>(null);
-
-  const calloutsWrapRef = useRef<HTMLDivElement>(null);
-  const mobileCalloutsRef = useRef<HTMLOListElement>(null);
-
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-
-  const activePizza = pizzas[activeIndex] ?? pizzas[0]!;
-  const p3d = activePizza.pizza3d;
-
-  const goToPizza = useCallback(
-    (nextIdx: number, direction: 'left' | 'right') => {
-      const count = pizzas.length;
-      if (count === 0) return;
-      const wrapped = ((nextIdx % count) + count) % count;
-      setSwipeDir(direction);
-      setActiveIndex(wrapped);
-      window.setTimeout(() => setSwipeDir(null), 320);
-    },
-    [pizzas.length]
-  );
-
-  const handlePrev = useCallback(() => {
-    goToPizza(activeIndex - 1, 'left');
-  }, [activeIndex, goToPizza]);
-
-  const handleNext = useCallback(() => {
-    goToPizza(activeIndex + 1, 'right');
-  }, [activeIndex, goToPizza]);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    if (!touch) return;
-    touchStartX.current = touch.clientX;
-    touchStartY.current = touch.clientY;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const touch = e.changedTouches[0];
-    if (!touch || touchStartX.current === null || touchStartY.current === null) return;
-    const dx = touch.clientX - touchStartX.current;
-    const dy = touch.clientY - touchStartY.current;
-    touchStartX.current = null;
-    touchStartY.current = null;
-
-    if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-      if (dx < 0) {
-        handleNext();
-      } else {
-        handlePrev();
-      }
-    }
-  };
-
-  // GSAP + ScrollTrigger timeline:
-  // 0.00: Single clean assembled 3D pizza in center (no gold spiral, no double crust, no fake triangle slice)
-  // 0.00 -> 0.50: Explodes vertically into the 5 true ingredient layers (Basil -> Toppings -> Mozzarella -> Sauce -> 48h Dough Crust)
-  // 0.50 -> 0.85: Holds exploded with L-shaped dotted leader lines & 2 circular vintage stamps visible
-  // 0.85 -> 1.00: Layers smoothly drift back together into the assembled 3D pizza
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setReducedMotion(mq.matches);
-
-    if (mq.matches) {
-      return;
-    }
+    if (mq.matches) return;
 
     let ctx: { revert: () => void } | undefined;
+    let removePointer: (() => void) | undefined;
     let isMounted = true;
 
     (async () => {
       const gsapModule = await import('gsap');
       const scrollTriggerModule = await import('gsap/ScrollTrigger');
-      if (!isMounted || !sectionRef.current || !pinContainerRef.current) return;
+      if (!isMounted || !sectionRef.current || !pinRef.current) return;
 
       const gsap = gsapModule.default;
       const ScrollTrigger = scrollTriggerModule.ScrollTrigger;
       gsap.registerPlugin(ScrollTrigger);
 
-      ctx = gsap.context(() => {
-        const isMobile = window.innerWidth < 768;
-        const yScale = isMobile ? 0.65 : 1;
+      ctx = gsap.context((self) => {
+        const q = self.selector!;
+        const layerEls = LAYERS.map(
+          (l) => q(`[data-layer-id="${l.id}"]`)[0] as HTMLElement
+        );
+        const calloutEls = q('[data-callout]') as HTMLElement[];
+        // Tall (phone) viewports have room to pull the layers further apart.
+        const spread =
+          parseFloat(
+            getComputedStyle(stackRef.current!).getPropertyValue('--spread')
+          ) || 1;
 
-        // Initial assembled state at scroll = 0:
-        // Only the clean assembled 3D pizza is visible at y=0; the 5 separated layers start tucked at y=0 with opacity 0
-        gsap.set(topHeaderRef.current, { opacity: 1, y: 0 });
-        gsap.set(assembledPizzaRef.current, {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          rotation: 0,
+        // ── Opening pose: one whole pizza, tilted, hovering under the headline
+        gsap.set(stackRef.current, {
+          y: () => window.innerHeight * 0.17,
+          scale: 1.42,
+          rotation: -7,
         });
-
-        gsap.set(layerBasilRef.current, {
-          opacity: 0,
-          y: -15 * yScale,
-          scale: 0.9,
-          rotation: 0,
-        });
-        gsap.set(layerToppingsRef.current, {
-          opacity: 0,
-          y: -8 * yScale,
-          scale: 0.94,
-          rotation: 0,
-        });
-        gsap.set(layerCheeseRef.current, {
-          opacity: 0,
-          y: 0,
-          scale: 0.94,
-          rotation: 0,
-        });
-        gsap.set(layerSauceRef.current, {
-          opacity: 0,
-          y: 8 * yScale,
-          scale: 0.94,
-          rotation: 0,
-        });
-        gsap.set(layerDoughRef.current, {
-          opacity: 0,
-          y: 14 * yScale,
-          scale: 0.98,
-          rotation: 0,
-        });
-
-        gsap.set(calloutsWrapRef.current, { opacity: 0, y: 12 });
-        if (mobileCalloutsRef.current) {
-          gsap.set(mobileCalloutsRef.current, { opacity: 0, y: 14 });
-        }
+        gsap.set(layerEls, { opacity: 0, yPercent: (i) => (i - 1.5) * 2 });
+        gsap.set(calloutEls, { autoAlpha: 0 });
+        gsap.set(stampRef.current, { autoAlpha: 0, scale: 0.7 });
+        gsap.set(outroRef.current, { autoAlpha: 0, y: 28 });
+        gsap.set(progressRef.current, { scaleY: 0, transformOrigin: 'top' });
 
         const tl = gsap.timeline({
+          defaults: { ease: 'none' },
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top top',
-            end: '+=240%',
-            pin: pinContainerRef.current,
-            scrub: 0.55,
+            end: '+=230%',
+            pin: pinRef.current,
+            scrub: 0.6,
+            invalidateOnRefresh: true,
           },
         });
 
-        // 1. As scroll begins (0 -> 0.22): Assembled pizza dissolves into the 5 separating layers
+        tl.to(progressRef.current, { scaleY: 1, duration: 1 }, 0);
+
+        // 0 → 0.2: headline leaves, the pizza levels out and takes centre stage
+        tl.to(introRef.current, { autoAlpha: 0, y: -36, duration: 0.1 }, 0.02);
         tl.to(
-          assembledPizzaRef.current,
-          {
-            opacity: 0,
-            scale: 0.98,
-            ease: 'power1.inOut',
-            duration: 0.2,
-          },
-          0.02
+          stackRef.current,
+          { y: 0, scale: 1, rotation: 0, ease: 'power2.inOut', duration: 0.2 },
+          0
         );
 
-        // Reveal the 5 true ingredient layers right as separation starts
-        tl.to(
-          [
-            layerDoughRef.current,
-            layerSauceRef.current,
-            layerCheeseRef.current,
-            layerToppingsRef.current,
-            layerBasilRef.current,
-          ],
-          {
-            opacity: 1,
-            duration: 0.14,
-            ease: 'power1.out',
-          },
-          0.01
-        );
+        // 0.14 → 0.2: swap the baked pizza for its separate layers (still stacked)
+        tl.to(layerEls, { opacity: 1, duration: 0.04 }, 0.14);
+        tl.to(assembledRef.current, { opacity: 0, duration: 0.06 }, 0.16);
 
-        // 2. Vertical separation of the 5 true ingredient layers (0.02 -> 0.50)
-        // Layer 1 (Top): Fresh green basil leaves
-        tl.to(
-          layerBasilRef.current,
-          {
-            y: -158 * yScale,
-            scale: 0.95,
-            rotation: -3,
-            ease: 'power2.out',
-            duration: 0.48,
-          },
-          0.02
-        );
-
-        // Layer 2 (Upper-Middle): Specific toppings of the active pizza (e.g. ONLY pepperoni for Pepperoni!)
-        tl.to(
-          layerToppingsRef.current,
-          {
-            y: -82 * yScale,
-            scale: 0.96,
-            rotation: 1.5,
-            ease: 'power2.out',
-            duration: 0.48,
-          },
-          0.02
-        );
-
-        // Layer 3 (Middle): Melted bubbling mozzarella sheet (NO crust!)
-        tl.to(
-          layerCheeseRef.current,
-          {
-            y: 4 * yScale,
-            scale: 0.94,
-            rotation: -1,
-            ease: 'power2.out',
-            duration: 0.48,
-          },
-          0.02
-        );
-
-        // Layer 4 (Lower-Middle): Tomato sauce or White cream sauce
-        tl.to(
-          layerSauceRef.current,
-          {
-            y: 84 * yScale,
-            scale: 0.93,
-            rotation: 1,
-            ease: 'power2.out',
-            duration: 0.48,
-          },
-          0.02
-        );
-
-        // Layer 5 (Bottom): The single 48h fermented dough crust
-        tl.to(
-          layerDoughRef.current,
-          {
-            y: 162 * yScale,
-            scale: 0.98,
-            rotation: 0,
-            ease: 'power2.out',
-            duration: 0.48,
-          },
-          0.02
-        );
-
-        // Fade in L-shaped dotted leader lines, ingredient callouts & 2 circular vintage stamps
-        tl.to(
-          calloutsWrapRef.current,
-          {
-            opacity: 1,
-            y: 0,
-            ease: 'power2.out',
-            duration: 0.25,
-          },
-          0.26
-        );
-
-        if (mobileCalloutsRef.current) {
+        // 0.17 → 0.56: the layers lift apart, top first
+        LAYERS.forEach((layer, i) => {
           tl.to(
-            mobileCalloutsRef.current,
+            layerEls[i]!,
             {
-              opacity: 1,
-              y: 0,
-              ease: 'power2.out',
-              duration: 0.25,
+              yPercent: layer.explodeY * spread,
+              rotation: layer.explodeRot,
+              ease: 'power3.out',
+              duration: 0.36,
             },
-            0.26
+            0.17 + i * 0.012
           );
-        }
-
-        // 3. Hold exploded state (0.50 -> 0.84) so the user can inspect ingredients & swipe 1:1 across all 15 pizzas
-        tl.to({}, { duration: 0.34 }, 0.5);
-
-        // 4. Reassemble layers back into the whole 3D pizza at the end of the scroll pin (0.84 -> 1.00)
+        });
         tl.to(
-          [calloutsWrapRef.current, mobileCalloutsRef.current],
-          {
-            opacity: 0,
-            y: 10,
-            duration: 0.1,
-            ease: 'power1.in',
-          },
-          0.84
+          shadowRef.current,
+          { yPercent: 150 * spread, scaleX: 0.82, opacity: 0.55, ease: 'power3.out', duration: 0.36 },
+          0.17
         );
 
+        // 0.36 → 0.62: annotations draw in one by one
+        calloutEls.forEach((el, i) => {
+          const fromLeft = el.dataset.callout === 'left';
+          const line = el.querySelector('[data-callout-line]');
+          tl.fromTo(
+            el,
+            { autoAlpha: 0, x: fromLeft ? -26 : 26 },
+            { autoAlpha: 1, x: 0, ease: 'power2.out', duration: 0.09 },
+            0.36 + i * 0.055
+          );
+          if (line) {
+            tl.fromTo(
+              line,
+              { scaleX: 0 },
+              { scaleX: 1, ease: 'power2.out', duration: 0.09 },
+              0.39 + i * 0.055
+            );
+          }
+        });
         tl.to(
-          [
-            layerBasilRef.current,
-            layerToppingsRef.current,
-            layerCheeseRef.current,
-            layerSauceRef.current,
-            layerDoughRef.current,
-          ],
+          stampRef.current,
+          { autoAlpha: 1, scale: 1, ease: 'back.out(1.6)', duration: 0.08 },
+          0.56
+        );
+
+        // 0.8 → 1: everything eases up to make room for the order call-to-action
+        tl.to(
+          stackRef.current,
           {
-            y: 0,
-            rotation: 0,
-            scale: 0.95,
-            opacity: 0,
-            duration: 0.16,
+            y: () => -window.innerHeight * 0.075,
+            scale: 0.9,
             ease: 'power2.inOut',
+            duration: 0.14,
           },
+          0.8
+        );
+        tl.to(
+          outroRef.current,
+          { autoAlpha: 1, y: 0, ease: 'power2.out', duration: 0.12 },
           0.84
         );
-
-        tl.to(
-          assembledPizzaRef.current,
-          {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            duration: 0.14,
-            ease: 'power2.out',
-          },
-          0.86
-        );
+        tl.to({}, { duration: 0.04 }, 0.96);
       }, sectionRef);
+
+      // Pointer parallax: nearer layers travel further, which sells the depth.
+      if (window.matchMedia('(pointer: fine)').matches && pinRef.current) {
+        const pinEl = pinRef.current;
+        const movers = Array.from(
+          pinEl.querySelectorAll<HTMLElement>('[data-parallax]')
+        ).map((el) => ({
+          depth: Number(el.dataset.parallax),
+          x: gsap.quickTo(el, 'x', { duration: 0.7, ease: 'power3.out' }),
+          y: gsap.quickTo(el, 'y', { duration: 0.7, ease: 'power3.out' }),
+        }));
+
+        const onMove = (e: PointerEvent) => {
+          const rect = pinEl.getBoundingClientRect();
+          const nx = (e.clientX - rect.left) / rect.width - 0.5;
+          const ny = (e.clientY - rect.top) / rect.height - 0.5;
+          movers.forEach((m) => {
+            m.x(nx * 34 * m.depth);
+            m.y(ny * 18 * m.depth);
+          });
+        };
+        pinEl.addEventListener('pointermove', onMove, { passive: true });
+        removePointer = () => pinEl.removeEventListener('pointermove', onMove);
+      }
     })();
 
     return () => {
       isMounted = false;
+      removePointer?.();
       ctx?.revert();
     };
   }, []);
 
-  const sauceImage =
-    p3d.sauceType === 'white'
-      ? '/images/layer-sauce-white-v2.webp'
-      : '/images/layer-sauce-v2.webp';
+  if (!pizza) return null;
 
-  const assembledImage = `/images/pizzas-3d/pizza-${p3d.slug}-v2.webp`;
-  const floatingToppingsImage = `/images/pizzas-3d/toppings-${p3d.slug}-v2.webp`;
+  const crustCopy = copy.explodedPizza.callouts.find((c) => c.id === 'callout-crust');
+  const sauceCopy = copy.explodedPizza.callouts.find((c) => c.id === 'callout-sauce');
+  const cheeseCopy = copy.explodedPizza.callouts.find((c) => c.id === 'callout-cheese');
+  const toppingCopy = pizza.pizza3d?.calloutTopLeft;
 
-  const handleOrderActivePizza = () => {
-    addItem(activePizza.id, activePizza.sizes?.[0]?.id, 1);
+  const callouts: {
+    layer: LayerId;
+    side: 'left' | 'right';
+    title: string;
+    detail: string;
+  }[] = [
+    {
+      layer: 'toppings',
+      side: 'left',
+      title: toppingCopy?.title[locale] ?? pizza.name[locale],
+      detail: toppingCopy?.detail[locale] ?? '',
+    },
+    {
+      layer: 'cheese',
+      side: 'right',
+      title: cheeseCopy?.title ?? 'Mozzarella',
+      detail: cheeseCopy?.detail ?? '',
+    },
+    {
+      layer: 'sauce',
+      side: 'left',
+      title: sauceCopy?.title ?? '',
+      detail: sauceCopy?.detail ?? '',
+    },
+    {
+      layer: 'crust',
+      side: 'right',
+      title: crustCopy?.title ?? '',
+      detail: crustCopy?.detail ?? '',
+    },
+  ];
+
+  const layerAlt: Record<LayerId, string> = {
+    toppings: toppingCopy?.title[locale] ?? pizza.name[locale],
+    cheese: cheeseCopy?.title ?? 'Mozzarella',
+    sauce: sauceCopy?.title ?? '',
+    crust: crustCopy?.title ?? '',
+  };
+
+  const assembledImage = '/images/pizzas-3d/pizza-pepperoni-v2.webp';
+  const pizzaLabel = `Pizza ${pizza.name[locale]}`;
+  const price = formatCents(pizza.priceCents);
+
+  const handleOrder = () => {
+    addItem(pizza.id, pizza.sizes?.[0]?.id, 1);
     openDrawer();
   };
+
+  const orderLabel =
+    locale === 'ca'
+      ? `Demanar ${pizza.name.ca} (${price})`
+      : `Pedir ${pizza.name.es} (${price})`;
+
+  // ── Reduced motion: a calm, fully static version of the same content ──────
+  if (reducedMotion) {
+    return (
+      <section
+        id="exploded-pizza"
+        data-theme="dark"
+        aria-labelledby="exploded-pizza-heading"
+        className="relative bg-[#14110F] px-4 py-20 text-[#F9F4EC] md:px-8"
+      >
+        <div
+          data-testid="exploded-pizza-reduced-motion"
+          className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-10 lg:grid-cols-2"
+        >
+          <div className="text-center lg:text-left">
+            <p className="mb-2 text-xs font-bold tracking-widest text-[#F1B24A] uppercase">
+              {copy.signatureHero.eyebrow}
+            </p>
+            <h2
+              id="exploded-pizza-heading"
+              className="font-serif-heading text-3xl font-extrabold md:text-4xl"
+            >
+              {copy.signatureHero.heading}
+            </h2>
+            <p className="mt-2 text-sm text-[#CBBBA8]">
+              {pizzaLabel} · {price} — {pizza.ingredients[locale]}
+            </p>
+            <img
+              src={assembledImage}
+              alt={`${pizzaLabel} — ${pizza.ingredients[locale]}`}
+              width={1280}
+              height={800}
+              loading="lazy"
+              className="mx-auto mt-6 aspect-[16/10] w-full max-w-[460px] object-contain"
+            />
+          </div>
+          <div>
+            <ol className="flex flex-col gap-3">
+              {callouts.map((c, i) => (
+                <li
+                  key={c.layer}
+                  className="rounded-2xl border border-[#F9F4EC]/15 bg-[#1F1813] p-4"
+                >
+                  <p className="font-serif-heading text-base font-bold text-[#F1B24A]">
+                    0{i + 1} · {c.title}
+                  </p>
+                  <p className="mt-1 text-sm text-[#CBBBA8]">{c.detail}</p>
+                </li>
+              ))}
+            </ol>
+            <button
+              type="button"
+              onClick={handleOrder}
+              data-testid="exploded-order-now-cta"
+              className="btn-pill mt-6 inline-flex min-h-[52px] cursor-pointer items-center justify-center rounded-full bg-[#EE6A2B] px-10 py-3 text-base font-extrabold text-[#14110F]"
+            >
+              {orderLabel}
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -371,579 +385,261 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
       ref={sectionRef}
       data-theme="dark"
       aria-labelledby="exploded-pizza-heading"
-      className="relative bg-[#14110F] text-[#F9F4EC]"
+      className="relative bg-[#0F0D0B] text-[#F9F4EC]"
     >
-      {/* Visually hidden accessible text description */}
       <p className="sr-only">{copy.explodedPizza.srDescription}</p>
 
-      {/* Main Pinned Dark 3D Stage */}
       <div
-        ref={pinContainerRef}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        className="relative flex min-h-screen w-full flex-col justify-between overflow-hidden rounded-b-[36px] border-b border-[#F9F4EC]/10 bg-[radial-gradient(ellipse_at_35%_25%,#2E231B_0%,#181411_55%,#0F0D0B_100%)] px-4 pt-14 pb-4 shadow-[0_24px_60px_rgba(0,0,0,0.85)] md:px-8 md:pt-16 md:pb-5"
+        ref={pinRef}
+        className="relative h-[100svh] min-h-[560px] w-full overflow-hidden bg-[radial-gradient(ellipse_at_50%_42%,#30231A_0%,#1A1512_46%,#0F0D0B_100%)]"
       >
-        {/* Ambient rising steam curls behind the 3D pizza */}
+        {/* Warm spotlight + steam, behind everything */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
+          className="pointer-events-none absolute top-1/2 left-1/2 h-[70svh] w-[min(820px,110vw)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(241,178,74,0.13)_0%,rgba(238,106,43,0.05)_45%,transparent_70%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
         >
           <svg
             viewBox="0 0 600 600"
-            className="animate-steam-drift h-[460px] w-[460px] opacity-25 blur-xl md:h-[620px] md:w-[620px]"
             fill="none"
+            className="animate-steam-drift h-[78svh] w-[78svh] opacity-25 blur-2xl"
           >
             <path
-              d="M210 460 C150 370, 270 280, 195 170 C140 95, 235 45, 210 10"
-              stroke="url(#steamGrad1)"
-              strokeWidth="44"
+              d="M210 520 C150 410, 270 300, 195 180 C140 95, 235 45, 210 0"
+              stroke="url(#explodedSteam)"
+              strokeWidth="46"
               strokeLinecap="round"
             />
             <path
-              d="M360 470 C430 375, 310 270, 395 165 C445 95, 355 40, 385 10"
-              stroke="url(#steamGrad1)"
+              d="M380 530 C450 415, 320 290, 400 175 C450 95, 355 40, 390 0"
+              stroke="url(#explodedSteam)"
               strokeWidth="38"
               strokeLinecap="round"
             />
             <defs>
-              <linearGradient id="steamGrad1" x1="0" y1="1" x2="0" y2="0">
+              <linearGradient id="explodedSteam" x1="0" y1="1" x2="0" y2="0">
                 <stop offset="0%" stopColor="#F9F4EC" stopOpacity="0" />
-                <stop offset="45%" stopColor="#F9F4EC" stopOpacity="0.45" />
+                <stop offset="45%" stopColor="#F9F4EC" stopOpacity="0.5" />
                 <stop offset="100%" stopColor="#F9F4EC" stopOpacity="0" />
               </linearGradient>
             </defs>
           </svg>
         </div>
 
-        {/* Left-edge vertical scroll indicator line + dots */}
+        {/* Scroll progress rail */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-5 z-30 hidden -translate-y-1/2 flex-col items-center gap-2.5 md:flex"
+          className="pointer-events-none absolute top-1/2 left-5 z-30 hidden h-40 w-[2px] -translate-y-1/2 overflow-hidden rounded-full bg-[#F9F4EC]/15 md:block"
         >
-          <span className="h-14 w-[2px] bg-[#F9F4EC]/20" />
-          <span className="h-8 w-[3px] rounded-full bg-[#F1B24A] shadow-[0_0_8px_#F1B24A]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#F1B24A]" />
-          <span className="h-2 w-2 rounded-full border border-[#F9F4EC]/40" />
-          <span className="h-2 w-2 rounded-full border border-[#F9F4EC]/40" />
-          <span className="h-2 w-2 rounded-full border border-[#F9F4EC]/40" />
+          <span
+            ref={progressRef}
+            className="block h-full w-full bg-[#F1B24A] shadow-[0_0_8px_#F1B24A]"
+          />
         </div>
 
-        {/* Top Header Block */}
+        {/* Headline block (leaves as the pizza takes over) */}
         <div
-          ref={topHeaderRef}
-          className="relative z-30 mx-auto max-w-2xl text-center"
+          ref={introRef}
+          className="absolute inset-x-0 top-[calc(68px+3.5svh)] z-30 mx-auto max-w-2xl px-5 text-center"
         >
-          <p className="mb-1 text-xs font-bold tracking-widest text-[#F1B24A] uppercase">
-            {copy.signatureHero.eyebrow} · {activeIndex + 1} / {pizzas.length}
+          <p className="mb-2 text-[11px] font-bold tracking-[0.2em] text-[#F1B24A] uppercase sm:text-xs">
+            {copy.signatureHero.eyebrow}
           </p>
           <h2
             id="exploded-pizza-heading"
-            className="font-serif-heading text-2xl font-extrabold tracking-tight text-[#F9F4EC] sm:text-3xl md:text-4xl"
+            className="font-serif-heading text-[1.7rem] leading-tight font-extrabold tracking-tight text-[#F9F4EC] sm:text-4xl md:text-[2.75rem]"
           >
-            Pizza {activePizza.name[locale]} · {formatCents(activePizza.priceCents)}
+            {copy.signatureHero.heading}
           </h2>
-          <p className="mx-auto mt-1.5 max-w-xl text-xs leading-relaxed text-[#CBBBA8] sm:text-sm">
-            {activePizza.ingredients[locale]}
+          <p className="mx-auto mt-2.5 max-w-md text-sm leading-relaxed text-[#CBBBA8]">
+            {pizzaLabel} · {price}
+            <span className="hidden sm:inline"> — {pizza.ingredients[locale]}</span>
           </p>
-          <div className="mt-3 flex items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={handleOrderActivePizza}
-              className="btn-pill inline-flex min-h-[40px] items-center gap-2 rounded-full bg-[#F1B24A] px-6 py-2 text-xs font-extrabold text-[#14110F] shadow-[0_8px_24px_rgba(241,178,74,0.35)] transition-transform hover:scale-105 hover:bg-[#F5C065] cursor-pointer sm:text-sm"
-            >
-              <span>{copy.signatureHero.ctaOrder}</span>
-              <span aria-hidden="true">›</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleOrder}
+            className="btn-pill mt-4 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full bg-[#F1B24A] px-7 py-2.5 text-sm font-extrabold text-[#14110F] shadow-[0_8px_24px_rgba(241,178,74,0.35)] transition-transform hover:scale-105 hover:bg-[#F5C065]"
+          >
+            <span>{copy.signatureHero.ctaOrder}</span>
+            <span aria-hidden="true">›</span>
+          </button>
         </div>
 
-        {/* Center 3D Interactive Stage */}
-        {reducedMotion ? (
+        {/* The pizza */}
+        <div className="absolute inset-0 z-20 flex items-center justify-center">
           <div
-            data-testid="exploded-pizza-reduced-motion"
-            className="relative z-20 mx-auto my-6 grid max-w-5xl grid-cols-1 items-center gap-8 lg:grid-cols-12"
+            ref={stackRef}
+            data-testid="exploded-pizza-layers"
+            className="relative aspect-[16/10] w-[min(580px,88vw,60svh)] [--spread:1.45] will-change-transform md:[--spread:1]"
           >
-            <div className="flex flex-col items-center lg:col-span-6">
-              <img
-                src={assembledImage}
-                alt={`Pizza ${activePizza.name[locale]} — ${activePizza.ingredients[locale]}`}
-                width={640}
-                height={400}
-                className="aspect-[16/10] w-full max-w-[440px] object-contain drop-shadow-[0_24px_36px_rgba(0,0,0,0.85)]"
-              />
-            </div>
-            <ol className="flex flex-col gap-3 lg:col-span-6">
-              {[p3d.calloutTopLeft, p3d.calloutBottomLeft, p3d.calloutTopRight].map(
-                (c, i) => (
-                  <li
-                    key={i}
-                    className="rounded-2xl border border-[#F9F4EC]/15 bg-[#14110F]/90 p-4"
-                  >
-                    <p className="font-serif-heading text-base font-bold text-[#F1B24A]">
-                      {c.title[locale]} · {c.subtitle[locale]}
-                    </p>
-                    <p className="mt-1 text-xs text-[#CBBBA8]">{c.detail[locale]}</p>
-                  </li>
-                )
-              )}
-            </ol>
-          </div>
-        ) : (
-          <div className="relative z-20 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center">
-            {/* Prev / Next 1:1 Swipe Arrow Controls */}
-            <button
-              type="button"
-              onClick={handlePrev}
-              aria-label="Pizza anterior (Swipe)"
-              data-testid="pizza-3d-prev"
-              className="absolute top-1/2 left-0 z-40 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#F9F4EC]/20 bg-[#14110F]/75 text-[#F9F4EC] backdrop-blur-md transition-all hover:scale-110 hover:border-[#F1B24A] hover:text-[#F1B24A] cursor-pointer md:left-6 md:h-12 md:w-12"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
+            {/* Contact shadow */}
+            <div
+              ref={shadowRef}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-[14%] bottom-[6%] z-0 h-[22%] rounded-[50%] bg-black/85 blur-2xl"
+            />
 
-            <button
-              type="button"
-              onClick={handleNext}
-              aria-label="Pizza siguiente (Swipe)"
-              data-testid="pizza-3d-next"
-              className="absolute top-1/2 right-0 z-40 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#F9F4EC]/20 bg-[#14110F]/75 text-[#F9F4EC] backdrop-blur-md transition-all hover:scale-110 hover:border-[#F1B24A] hover:text-[#F1B24A] cursor-pointer md:right-6 md:h-12 md:w-12"
+            {/* Baked pizza (opening state) */}
+            <div
+              ref={assembledRef}
+              data-layer-id="assembled"
+              className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center will-change-[transform,opacity]"
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-
-            {/* The 5-Layer 3D Exploding Stack (NO second pizza crust at the top!) */}
-            <div className="relative flex h-[290px] w-full items-center justify-center sm:h-[360px] md:h-[410px]">
-              <div
-                data-testid="exploded-pizza-layers"
-                className={`relative h-full w-full max-w-[330px] transition-transform duration-300 sm:max-w-[460px] md:max-w-[540px] ${
-                  swipeDir === 'right'
-                    ? 'translate-x-3 scale-[0.98]'
-                    : swipeDir === 'left'
-                      ? '-translate-x-3 scale-[0.98]'
-                      : 'translate-x-0 scale-100'
-                }`}
-              >
-                {/* Realistic dark table floor shadow at the bottom */}
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-10 bottom-2 z-0 h-14 rounded-full bg-black/80 blur-2xl"
+              <div data-parallax="0.6" className="h-full w-full">
+                <img
+                  src={assembledImage}
+                  alt={`${pizzaLabel} — ${pizza.ingredients[locale]}`}
+                  width={1280}
+                  height={800}
+                  loading="lazy"
+                  decoding="async"
+                  className="pizza-layer-bob h-full w-full object-contain drop-shadow-[0_26px_30px_rgba(0,0,0,0.75)]"
                 />
+              </div>
+            </div>
 
-                {/* ASSEMBLED 3D PIZZA (Visible at scroll = 0; dissolves into the 5 separated ingredient layers on scroll) */}
+            {/* Separate ingredient layers */}
+            {LAYERS.map((layer) => (
+              <div
+                key={layer.id}
+                data-layer-id={layer.id}
+                className={`pointer-events-none absolute inset-0 ${layer.zClass} flex items-center justify-center opacity-0 will-change-[transform,opacity]`}
+              >
                 <div
-                  ref={assembledPizzaRef}
-                  data-layer-id="assembled-pizza"
-                  className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center will-change-transform"
+                  data-parallax={layer.depth}
+                  className={`${layer.widthClass} aspect-[16/10]`}
                 >
                   <img
-                    src={assembledImage}
-                    alt={`Pizza 3D ${activePizza.name[locale]}`}
+                    src={layer.src}
+                    alt={layerAlt[layer.id]}
                     width={1280}
                     height={800}
-                    className="aspect-[16/10] w-full object-contain drop-shadow-[0_28px_36px_rgba(0,0,0,0.92)]"
-                  />
-                </div>
-
-                {/* LAYER 5 (Bottom, z-10): 3D 48h Fermented Artisan Dough Crust (the ONLY crust in the exploded view!) */}
-                <div
-                  ref={layerDoughRef}
-                  data-layer-id="crust"
-                  className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center will-change-transform"
-                >
-                  <img
-                    src="/images/layer-crust-v2.webp"
-                    alt="Capa 5: Masa artesanal fermentada 48 horas"
-                    width={1280}
-                    height={800}
-                    className="aspect-[16/10] w-full object-contain drop-shadow-[0_26px_28px_rgba(0,0,0,0.92)]"
-                  />
-                </div>
-
-                {/* LAYER 4 (Lower-Middle, z-20): 3D Sauce Layer (Tomato Sauce or White Cream Base) */}
-                <div
-                  ref={layerSauceRef}
-                  data-layer-id="sauce"
-                  className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center will-change-transform"
-                >
-                  <img
-                    src={sauceImage}
-                    alt={
-                      p3d.sauceType === 'white'
-                        ? 'Capa 4: Base blanca cremosa'
-                        : 'Capa 4: Salsa de tomate artesanal'
-                    }
-                    width={1280}
-                    height={800}
-                    className="aspect-[16/10] w-[86%] object-contain drop-shadow-[0_18px_22px_rgba(0,0,0,0.82)]"
-                  />
-                </div>
-
-                {/* LAYER 3 (Middle, z-30): 3D Melted Bubbling Mozzarella Sheet (NO crust!) */}
-                <div
-                  ref={layerCheeseRef}
-                  data-layer-id="cheese"
-                  className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center will-change-transform"
-                >
-                  <img
-                    src="/images/layer-cheese-v2.webp"
-                    alt="Capa 3: Mozzarella fundida"
-                    width={1280}
-                    height={800}
-                    className="aspect-[16/10] w-[90%] object-contain drop-shadow-[0_20px_24px_rgba(0,0,0,0.85)]"
-                  />
-                </div>
-
-                {/* LAYER 2 (Upper-Middle, z-40): Specific 3D Floating Toppings of Active Pizza ONLY (NO mushrooms on Pepperoni!) */}
-                <div
-                  ref={layerToppingsRef}
-                  data-layer-id="toppings"
-                  className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center will-change-transform"
-                >
-                  <img
-                    src={floatingToppingsImage}
-                    alt={`Capa 2: Ingredientes de ${activePizza.name[locale]}`}
-                    width={1280}
-                    height={800}
-                    className="relative z-10 aspect-[16/10] w-[94%] object-contain drop-shadow-[0_20px_22px_rgba(0,0,0,0.88)]"
-                  />
-                </div>
-
-                {/* LAYER 1 (Top, z-50): Pure 3D Fresh Green Basil Leaves (NO gold wire spiral, NO pizza crust!) */}
-                <div
-                  ref={layerBasilRef}
-                  data-layer-id="basil"
-                  className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center will-change-transform"
-                >
-                  <img
-                    src="/images/layer-basil-v2.webp"
-                    alt="Capa 1: Hojas de albahaca fresca"
-                    width={1280}
-                    height={800}
-                    className="aspect-[16/10] w-[90%] object-contain drop-shadow-[0_16px_18px_rgba(0,0,0,0.85)]"
+                    loading="lazy"
+                    decoding="async"
+                    style={{ animationDelay: layer.bobDelay }}
+                    className="pizza-layer-bob h-full w-full object-contain drop-shadow-[0_18px_20px_rgba(0,0,0,0.7)]"
                   />
                 </div>
               </div>
+            ))}
 
-              {/* Desktop Callouts with L-Shaped White Dotted SVG Leader Lines & 2 Vintage Circular Stamps */}
-              <div
-                ref={calloutsWrapRef}
-                className="pointer-events-none absolute inset-0 z-30 hidden md:block"
-              >
-                {/* 1. TOP-LEFT CALLOUT */}
-                <div className="absolute top-[10%] left-4 flex flex-col items-start lg:left-10">
-                  <p className="font-serif-heading text-xl font-extrabold text-[#F9F4EC] lg:text-2xl">
-                    {p3d.calloutTopLeft.title[locale]}
-                  </p>
-                  <p className="text-xs font-bold text-[#F1B24A]">
-                    {p3d.calloutTopLeft.subtitle[locale]}
-                  </p>
-                  <p className="mt-0.5 max-w-[190px] text-[11px] leading-snug text-[#CBBBA8]">
-                    {p3d.calloutTopLeft.detail[locale]}
-                  </p>
-                  <svg
-                    width="135"
-                    height="58"
-                    viewBox="0 0 135 58"
-                    fill="none"
-                    className="mt-1.5"
-                    aria-hidden="true"
+            {/* Annotations, each pinned to its layer's resting height */}
+            {callouts.map((c, i) => {
+              const layer = LAYERS.find((l) => l.id === c.layer)!;
+              const isLeft = c.side === 'left';
+              return (
+                <div
+                  key={c.layer}
+                  className={`absolute z-50 -translate-y-1/2 ${
+                    isLeft ? 'right-[81%] md:right-[90%]' : 'left-[81%] md:left-[90%]'
+                  }`}
+                  style={{ top: `calc(50% + ${layer.explodeY}% * var(--spread))` }}
+                >
+                  <div
+                    data-callout={c.side}
+                    className={`invisible flex items-center gap-2.5 ${
+                      isLeft ? 'flex-row' : 'flex-row-reverse'
+                    }`}
                   >
-                    <circle cx="8" cy="6" r="3.5" fill="#F9F4EC" />
-                    <path
-                      d="M8 6 V38 H68 V50 H126"
-                      stroke="#F9F4EC"
-                      strokeWidth="1.6"
-                      strokeDasharray="3 4"
-                    />
-                    <circle cx="126" cy="50" r="4" fill="#F9F4EC" />
-                  </svg>
-                </div>
-
-                {/* 2. BOTTOM-LEFT CALLOUT */}
-                <div className="absolute top-[48%] left-4 flex flex-col items-start lg:left-10">
-                  <p className="font-serif-heading text-xl font-extrabold text-[#F9F4EC] lg:text-2xl">
-                    {p3d.calloutBottomLeft.title[locale]}
-                  </p>
-                  <p className="text-xs font-bold text-[#F1B24A]">
-                    {p3d.calloutBottomLeft.subtitle[locale]}
-                  </p>
-                  <p className="mt-0.5 max-w-[190px] text-[11px] leading-snug text-[#CBBBA8]">
-                    {p3d.calloutBottomLeft.detail[locale]}
-                  </p>
-                  <svg
-                    width="140"
-                    height="56"
-                    viewBox="0 0 140 56"
-                    fill="none"
-                    className="mt-1.5"
-                    aria-hidden="true"
-                  >
-                    <circle cx="8" cy="6" r="3.5" fill="#F9F4EC" />
-                    <path
-                      d="M8 6 V48 H130"
-                      stroke="#F9F4EC"
-                      strokeWidth="1.6"
-                      strokeDasharray="3 4"
-                    />
-                    <circle cx="130" cy="48" r="4" fill="#F9F4EC" />
-                  </svg>
-                </div>
-
-                {/* 3. TOP-RIGHT CALLOUT */}
-                <div className="absolute top-[14%] right-4 flex flex-col items-end text-right lg:right-10">
-                  <p className="font-serif-heading text-xl font-extrabold text-[#F9F4EC] lg:text-2xl">
-                    {p3d.calloutTopRight.title[locale]}
-                  </p>
-                  <p className="text-xs font-bold text-[#F1B24A]">
-                    {p3d.calloutTopRight.subtitle[locale]}
-                  </p>
-                  <p className="mt-0.5 max-w-[190px] text-[11px] leading-snug text-[#CBBBA8]">
-                    {p3d.calloutTopRight.detail[locale]}
-                  </p>
-                  <svg
-                    width="145"
-                    height="54"
-                    viewBox="0 0 145 54"
-                    fill="none"
-                    className="mt-1.5"
-                    aria-hidden="true"
-                  >
-                    <circle cx="136" cy="6" r="3.5" fill="#F9F4EC" />
-                    <path
-                      d="M136 6 V46 H10"
-                      stroke="#F9F4EC"
-                      strokeWidth="1.6"
-                      strokeDasharray="3 4"
-                    />
-                    <circle cx="10" cy="46" r="4" fill="#F9F4EC" />
-                  </svg>
-                </div>
-
-                {/* 4. BOTTOM-RIGHT TWO VINTAGE CIRCULAR STAMPS */}
-                <div className="absolute top-[50%] right-4 flex flex-col items-end gap-3 lg:right-10">
-                  <svg
-                    width="150"
-                    height="46"
-                    viewBox="0 0 150 46"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <circle cx="8" cy="8" r="4" fill="#F9F4EC" />
-                    <path
-                      d="M8 8 H114 V40"
-                      stroke="#F9F4EC"
-                      strokeWidth="1.6"
-                      strokeDasharray="3 4"
-                    />
-                    <circle cx="114" cy="40" r="3" fill="#F9F4EC" />
-                  </svg>
-
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-18 w-18 flex-col items-center justify-center rounded-full border-2 border-dashed border-[#F9F4EC]/75 bg-[#14110F]/80 p-1.5 text-center shadow-lg">
-                      <span className="text-[8px] font-bold tracking-widest text-[#F1B24A] uppercase">
-                        La Piccerella
-                      </span>
-                      <span className="font-serif-heading text-[11px] leading-tight font-extrabold text-[#F9F4EC]">
-                        Receta
-                        <br />
-                        Artesanal
-                      </span>
-                      <span className="text-[7px] tracking-wider text-[#CBBBA8] uppercase">
-                        Badalona
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <svg
-                      width="88"
-                      height="16"
-                      viewBox="0 0 88 16"
-                      fill="none"
-                      aria-hidden="true"
+                    <div
+                      className={`w-[84px] sm:w-[120px] md:w-[176px] lg:w-[220px] ${
+                        isLeft ? 'text-right' : 'text-left'
+                      }`}
                     >
-                      <circle cx="8" cy="8" r="4" fill="#F9F4EC" />
-                      <line
-                        x1="8"
-                        y1="8"
-                        x2="84"
-                        y2="8"
-                        stroke="#F9F4EC"
-                        strokeWidth="1.6"
-                        strokeDasharray="3 4"
+                      <p className="font-serif-heading text-lg leading-none font-extrabold text-[#F1B24A] md:text-2xl">
+                        0{i + 1}
+                      </p>
+                      <p className="mt-1 text-[11px] leading-tight font-bold text-[#F9F4EC] [text-shadow:0_1px_8px_rgba(0,0,0,0.9)] md:text-base">
+                        {c.title}
+                      </p>
+                      <p className="mt-1 hidden text-xs leading-snug text-[#CBBBA8] md:block">
+                        {c.detail}
+                      </p>
+                    </div>
+                    <div
+                      aria-hidden="true"
+                      className={`hidden items-center md:flex ${
+                        isLeft ? 'flex-row' : 'flex-row-reverse'
+                      }`}
+                    >
+                      <span
+                        data-callout-line
+                        className={`block w-14 border-t border-dashed border-[#F9F4EC]/70 lg:w-24 ${
+                          isLeft ? 'origin-left' : 'origin-right'
+                        }`}
                       />
-                    </svg>
-                    <div className="flex h-18 w-18 flex-col items-center justify-center rounded-full border-2 border-[#F9F4EC]/75 bg-[#14110F]/80 p-1.5 text-center shadow-lg">
-                      <span className="text-[8px] font-bold tracking-widest text-[#CBBBA8] uppercase">
-                        Fermentación
-                      </span>
-                      <span className="font-serif-heading text-sm leading-tight font-extrabold text-[#F1B24A]">
-                        48 H
-                      </span>
-                      <span className="text-[8px] font-semibold text-[#F9F4EC] uppercase">
-                        Masa Fina
-                      </span>
+                      <span className="block h-2 w-2 rounded-full bg-[#F9F4EC] shadow-[0_0_8px_rgba(249,244,236,0.8)]" />
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              );
+            })}
 
-            {/* Mobile Callouts List below the 3D pizza (< 768px) */}
-            <ol
-              ref={mobileCalloutsRef}
-              data-testid="exploded-pizza-mobile-callouts"
-              className="mt-2 grid w-full grid-cols-1 gap-2 sm:grid-cols-3 md:hidden"
+            {/* Rotating house stamp */}
+            <div
+              ref={stampRef}
+              aria-hidden="true"
+              className="invisible absolute top-[86%] right-[97%] z-50 hidden h-24 w-24 lg:block"
             >
-              {[p3d.calloutTopLeft, p3d.calloutBottomLeft, p3d.calloutTopRight].map(
-                (callout, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-center gap-2.5 rounded-xl border border-[#F9F4EC]/15 bg-[#14110F]/85 px-3 py-2"
-                  >
-                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#F1B24A] text-[11px] font-extrabold text-[#14110F]">
-                      0{idx + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate font-serif-heading text-xs font-bold text-[#F9F4EC]">
-                        {callout.title[locale]}
-                      </p>
-                      <p className="truncate text-[11px] text-[#CBBBA8]">
-                        {callout.detail[locale]}
-                      </p>
-                    </div>
-                  </li>
-                )
-              )}
-            </ol>
-          </div>
-        )}
-
-        {/* Bottom 1:1 Pizza Carousel Selector Pills & Dash Indicators */}
-        <div className="relative z-30 mx-auto mt-2 flex w-full max-w-5xl flex-col items-center gap-3">
-          <div className="flex items-center justify-center gap-1.5" aria-hidden="true">
-            {pizzas.map((p, idx) => {
-              const isCurrent = idx === activeIndex;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() =>
-                    goToPizza(idx, idx > activeIndex ? 'right' : 'left')
-                  }
-                  tabIndex={-1}
-                  className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${
-                    isCurrent
-                      ? 'w-8 bg-[#F1B24A] shadow-[0_0_8px_#F1B24A]'
-                      : 'w-3 bg-[#F9F4EC]/25 hover:bg-[#F9F4EC]/50'
-                  }`}
-                />
-              );
-            })}
-          </div>
-
-          <div
-            role="tablist"
-            aria-label={
-              locale === 'ca'
-                ? 'Selecciona qualsevol de les 15 pizzes per veure-la 1:1 en 3D'
-                : 'Selecciona cualquiera de las 15 pizzas para verla 1:1 en 3D'
-            }
-            className="flex w-full flex-nowrap items-center gap-2 overflow-x-auto px-2 py-1"
-          >
-            {pizzas.map((pizza, idx) => {
-              const isSelected = idx === activeIndex;
-              return (
-                <button
-                  key={pizza.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={isSelected}
-                  data-testid={`pizza-3d-pill-${pizza.id}`}
-                  onClick={() =>
-                    goToPizza(idx, idx > activeIndex ? 'right' : 'left')
-                  }
-                  className={`shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                    isSelected
-                      ? 'border-[#F1B24A] bg-[#F1B24A] text-[#14110F] shadow-[0_0_14px_rgba(241,178,74,0.45)]'
-                      : 'border-[#F9F4EC]/20 bg-[#14110F]/70 text-[#CBBBA8] hover:border-[#F9F4EC]/50 hover:text-[#F9F4EC]'
-                  }`}
-                >
-                  {pizza.name[locale]} · {formatCents(pizza.priceCents)}
-                </button>
-              );
-            })}
+              <svg viewBox="0 0 100 100" className="animate-stamp-spin h-full w-full">
+                <defs>
+                  <path
+                    id="explodedStampRing"
+                    d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0"
+                  />
+                </defs>
+                <circle cx="50" cy="50" r="48" fill="#14110F" fillOpacity="0.75" stroke="#F9F4EC" strokeOpacity="0.55" strokeWidth="1" />
+                <circle cx="50" cy="50" r="27" fill="none" stroke="#F9F4EC" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+                <text fill="#F9F4EC" fontSize="8.4" fontWeight="700" letterSpacing="2.1">
+                  <textPath href="#explodedStampRing">
+                    LA PICCERELLA · BADALONA · RECETA ARTESANAL ·
+                  </textPath>
+                </text>
+              </svg>
+              <span className="font-serif-heading absolute inset-0 flex items-center justify-center text-lg font-extrabold text-[#F1B24A]">
+                48 h
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Bottom Dark Summary Band below the rounded 3D stage */}
-      <div className="mx-auto max-w-5xl px-4 py-14 text-center md:px-8 md:py-18">
-        <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-12">
-          <div className="hidden border-r border-[#F9F4EC]/15 pr-6 text-right md:col-span-3 md:block">
-            <p className="font-serif-heading text-3xl font-extrabold text-[#F9F4EC]">
-              48 <span className="text-lg font-normal text-[#CBBBA8]">h</span>
+        {/* Closing block: house numbers + order button */}
+        <div
+          ref={outroRef}
+          className="invisible absolute inset-x-0 bottom-[max(18px,3svh)] z-30 mx-auto flex max-w-3xl flex-col items-center px-5 text-center"
+        >
+          <div className="flex items-center justify-center gap-5 md:gap-8">
+            <p className="text-right">
+              <span className="font-serif-heading block text-2xl leading-none font-extrabold whitespace-nowrap md:text-3xl">
+                48 <span className="text-sm font-normal text-[#CBBBA8]">h</span>
+              </span>
+              <span className="mt-1 block text-[11px] text-[#CBBBA8]">
+                {locale === 'ca' ? 'Fermentació lenta' : 'Fermentación lenta'}
+              </span>
             </p>
-            <p className="mt-1 text-xs text-[#CBBBA8]">
-              {locale === 'ca' ? 'Fermentació lenta' : 'Fermentación lenta'}
-            </p>
-          </div>
-
-          <div className="md:col-span-6">
-            <h3 className="font-serif-heading text-2xl font-extrabold text-[#F9F4EC] sm:text-3xl">
+            <h3 className="font-serif-heading max-w-[13rem] text-base leading-tight font-extrabold sm:max-w-xs sm:text-xl md:text-2xl">
               {locale === 'ca' ? 'Tradició, qualitat i sabor' : 'Tradición, calidad y sabor'}{' '}
               <span className="text-[#F1B24A]">La Piccerella</span>
             </h3>
-          </div>
-
-          <div className="hidden border-l border-[#F9F4EC]/15 pl-6 text-left md:col-span-3 md:block">
-            <p className="font-serif-heading text-3xl font-extrabold text-[#F9F4EC]">
-              100 <span className="text-lg font-normal text-[#CBBBA8]">%</span>
+            <p className="text-left">
+              <span className="font-serif-heading block text-2xl leading-none font-extrabold whitespace-nowrap md:text-3xl">
+                100 <span className="text-sm font-normal text-[#CBBBA8]">%</span>
+              </span>
+              <span className="mt-1 block text-[11px] text-[#CBBBA8]">
+                {locale === 'ca' ? 'Obrador artesanal' : 'Obrador artesanal'}
+              </span>
             </p>
-            <p className="mt-1 text-xs text-[#CBBBA8]">
-              {locale === 'ca' ? 'Obrador artesanal' : 'Obrador artesanal'}
-            </p>
           </div>
-        </div>
-
-        <p className="mx-auto mt-4 max-w-2xl text-xs leading-relaxed text-[#CBBBA8] sm:text-sm">
-          {copy.signatureHero.body}
-        </p>
-
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-4">
           <button
             type="button"
-            onClick={handleOrderActivePizza}
+            onClick={handleOrder}
             data-testid="exploded-order-now-cta"
-            className="btn-pill inline-flex min-h-[54px] items-center justify-center rounded-full bg-[#EE6A2B] px-12 py-3.5 text-base font-extrabold text-[#14110F] shadow-[0_12px_36px_rgba(238,106,43,0.45)] transition-transform hover:scale-105 hover:bg-[#F37D44] cursor-pointer md:text-lg"
+            className="btn-pill mt-4 inline-flex min-h-[52px] cursor-pointer items-center justify-center rounded-full bg-[#EE6A2B] px-10 py-3 text-base font-extrabold text-[#14110F] shadow-[0_12px_36px_rgba(238,106,43,0.45)] transition-transform hover:scale-105 hover:bg-[#F37D44] md:px-12 md:text-lg"
           >
-            {locale === 'ca'
-              ? `Demanar ${activePizza.name.ca} (${formatCents(activePizza.priceCents)})`
-              : `Pedir ${activePizza.name.es} (${formatCents(activePizza.priceCents)})`}
+            {orderLabel}
           </button>
         </div>
       </div>
