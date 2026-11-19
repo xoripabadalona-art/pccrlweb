@@ -71,10 +71,25 @@ export interface SiteConfig {
     photo: string;
     todo: string;
   };
-  legalPagesTodo: {
-    avisoLegal: string;
-    privacidad: string;
-    cookies: string;
+  /**
+   * Identity of the business owner, required by Spanish law (LSSI-CE art. 10,
+   * RGPD art. 13) on the legal pages. Leave a field empty until the client
+   * confirms it: the pages then say the detail is pending instead of guessing.
+   */
+  legal: {
+    /** Full name or company name of the owner (titular) */
+    ownerName: string;
+    /** NIF / CIF */
+    taxId: string;
+    /** Contact e-mail for legal and data-protection requests */
+    email: string;
+    /** ISO date the legal texts were last revised */
+    lastUpdated: string;
+  };
+  /** Live Google reviews (Maps JavaScript API, Places library) */
+  googleReviews: {
+    apiKey: string;
+    placeId: string;
   };
 }
 
@@ -150,9 +165,17 @@ export const site: SiteConfig = {
     photo: '/images/real/founder-gustavo.webp',
     todo: 'TODO: confirm founder bio quote and exact opening year with Gustavo',
   },
-  legalPagesTodo: {
-    avisoLegal: 'TODO: client legal owner NIF/CIF and registered address for Aviso Legal',
-    privacidad: 'TODO: client data controller contact email for Política de Privacidad',
-    cookies: 'TODO: review cookies notice if GA4 is enabled in production',
+  legal: {
+    // TODO: client must confirm the owner's full name or company name (titular)
+    ownerName: '',
+    // TODO: client must confirm the owner's NIF / CIF
+    taxId: '',
+    // TODO: client must confirm a contact e-mail for legal and privacy requests
+    email: '',
+    lastUpdated: '2026-11-19',
+  },
+  googleReviews: {
+    apiKey: (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '').trim(),
+    placeId: (process.env.NEXT_PUBLIC_GOOGLE_PLACE_ID ?? '').trim(),
   },
 };

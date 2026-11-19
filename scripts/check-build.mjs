@@ -69,6 +69,17 @@ console.warn(
   }`
 );
 
+const hasGoogleReviews =
+  Boolean(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) &&
+  Boolean(process.env.NEXT_PUBLIC_GOOGLE_PLACE_ID);
+console.warn(
+  `✓ Google reviews: ${
+    hasGoogleReviews
+      ? 'live (API key + Place ID set)'
+      : '(not set — the reviews section only shows links to Google)'
+  }`
+);
+
 if (todoLines.length > 0) {
   console.warn(`\n⚠️  Remaining TODO items in src/data/site.ts (${todoLines.length}):`);
   for (const t of todoLines) {

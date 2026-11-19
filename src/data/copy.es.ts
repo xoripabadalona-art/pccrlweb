@@ -265,7 +265,7 @@ export const copyEs: LocaleCopy = {
   reviewsSection: {
     eyebrow: 'Opiniones reales',
     heading: 'Lo que dicen nuestros vecinos en Google',
-    body: 'No inventamos reseñas ni estrellas. Consulta las opiniones verificadas directamente en nuestra ficha de Google Maps o déjanos tu valoración tras tu visita.',
+    body: 'Opiniones de clientes reales, tal y como aparecen en nuestra ficha de Google. Si ya nos has visitado, cuéntanos qué te pareció.',
     ctaReadGoogle: 'Lee las opiniones de nuestros clientes en Google',
     ctaWriteGoogle: 'Escribir una reseña en Google',
     ratingSuffix: 'según Google, actualizado en',
@@ -345,12 +345,12 @@ export const copyEs: LocaleCopy = {
     tagline:
       'Pizzería artesanal en Badalona. Masa con 48 horas de fermentación, ingredientes de primerísima calidad y empanadas.',
     navigationTitle: 'Navegación',
-    contactTitle: 'Contacto (NAP)',
+    contactTitle: 'Contacto',
     socialTitle: 'Síguenos',
-    legalTitle: 'Legal (TODO)',
-    avisoLegal: 'Aviso legal (TODO)',
-    privacidad: 'Política de privacidad (TODO)',
-    cookies: 'Política de cookies (TODO)',
+    legalTitle: 'Legal',
+    avisoLegal: 'Aviso legal',
+    privacidad: 'Política de privacidad',
+    cookies: 'Política de cookies',
     rights: 'Todos los derechos reservados.',
   },
 };

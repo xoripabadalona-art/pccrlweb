@@ -110,6 +110,36 @@ test.describe('La Piccerella E2E Smoke, Reduced Motion, NAP & Accessibility', ()
     await expect(carbonaraImg).toHaveAttribute('src', /pizzas-3d\/pizza-carbonara/);
   });
 
+  test('legal pages are reachable from the footer in both languages', async ({ page }) => {
+    await page.goto('/es');
+    await page.locator('footer a[href="/es/aviso-legal"]').click();
+    await expect(page.locator('h1')).toHaveText('Aviso legal');
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+
+    await page.goto('/es/privacidad');
+    await expect(page.locator('h1')).toHaveText('Política de privacidad');
+    await page.goto('/es/cookies');
+    await expect(page.locator('h1')).toHaveText('Política de cookies');
+    // The basket key named in the cookie policy is the one the shop really uses
+    await expect(page.locator('main')).toContainText('la-piccerella-basket-v1');
+
+    await page.goto('/ca/aviso-legal');
+    await expect(page.locator('h1')).toHaveText('Avís legal');
+
+    // No internal notes leak into the public legal texts
+    await expect(page.locator('main')).not.toContainText('TODO');
+  });
+
+  test('reviews section falls back to plain Google links when live reviews are not configured', async ({
+    page,
+  }) => {
+    await page.goto('/es');
+    const section = page.locator('#opiniones');
+    await expect(section.getByTestId('google-reviews')).toHaveCount(0);
+    await expect(section.locator('a')).toHaveCount(2);
+    await expect(section).not.toContainText('No inventamos');
+  });
+
   test('passes axe-core WCAG AA accessibility audit on /es and /es/carta', async ({
     page,
   }) => {
@@ -124,6 +154,12 @@ test.describe('La Piccerella E2E Smoke, Reduced Motion, NAP & Accessibility', ()
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze();
     expect(cartaResults.violations).toEqual([]);
+
+    await page.goto('/es/aviso-legal');
+    const legalResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze();
+    expect(legalResults.violations).toEqual([]);
   });
 
   test('meets Core Web Vitals (CLS < 0.1, FCP/LCP < 2.5s) and 100/100 technical SEO checks', async ({

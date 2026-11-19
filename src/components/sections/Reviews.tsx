@@ -2,6 +2,7 @@ import React from 'react';
 import { site } from '@/data/site';
 import { customerReviews } from '@/data/reviews';
 import { getCopy, type Locale } from '@/data/copy';
+import { GoogleReviews } from './GoogleReviews';
 
 export interface ReviewsProps {
   locale: Locale;
@@ -22,7 +23,12 @@ export function Reviews({ locale }: ReviewsProps) {
     ? site.googleReviewsUrl
     : mapsSearchFallback;
 
+  // Live reviews from Google when the API key and Place ID are configured;
+  // otherwise the section is a simple invitation to read and write them there.
+  const liveReviews = Boolean(site.googleReviews.apiKey && site.googleReviews.placeId);
+
   const hasVerifiedRating =
+    !liveReviews &&
     site.googleRating.ratingValue !== null &&
     site.googleRating.updatedAt !== null;
 
@@ -33,7 +39,7 @@ export function Reviews({ locale }: ReviewsProps) {
       aria-labelledby="reviews-heading"
       className="bg-[#FAF5ED] py-20 text-[#1A1512] md:py-24"
     >
-      <div className="mx-auto max-w-5xl px-4 md:px-8">
+      <div className="mx-auto max-w-6xl px-4 md:px-8">
         <div className="rounded-[24px] border border-[#1A1512]/12 bg-[#F4EBDD] p-8 shadow-md md:p-12">
           <div className="mx-auto max-w-2xl text-center">
             <p className="mb-2 text-xs font-bold tracking-widest text-[#A8241B] uppercase">
@@ -48,6 +54,11 @@ export function Reviews({ locale }: ReviewsProps) {
             <p className="mb-6 text-base leading-relaxed text-[#574B42]">
               {copy.reviewsSection.body}
             </p>
+          </div>
+
+          <GoogleReviews locale={locale} readAllHref={readReviewsHref} />
+
+          <div className={`mx-auto max-w-2xl text-center ${liveReviews ? 'mt-8' : ''}`}>
 
             {/* Show text rating ONLY if present in site.ts with an explicit updatedAt date */}
             {hasVerifiedRating && (

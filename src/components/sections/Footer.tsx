@@ -118,7 +118,7 @@ export function Footer({ locale }: FooterProps) {
             </ul>
           </div>
 
-          {/* Col 4: Social links (rel="me noopener") & Legal placeholders */}
+          {/* Col 4: Social links (rel="me noopener") & legal pages */}
           <div>
             <h2 className="mb-4 text-xs font-bold tracking-widest text-[#EE6A2B] uppercase">
               {copy.footer.socialTitle}
@@ -165,21 +165,30 @@ export function Footer({ locale }: FooterProps) {
             <h2 className="mb-2 text-xs font-bold tracking-widest text-[#CBBBA8] uppercase">
               {copy.footer.legalTitle}
             </h2>
-            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#CBBBA8]">
+            <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-[#CBBBA8]">
               <li>
-                <span title={site.legalPagesTodo.avisoLegal}>
+                <Link
+                  href={`/${locale}/aviso-legal`}
+                  className="underline underline-offset-2 hover:text-[#EE6A2B]"
+                >
                   {copy.footer.avisoLegal}
-                </span>
+                </Link>
               </li>
               <li>
-                <span title={site.legalPagesTodo.privacidad}>
+                <Link
+                  href={`/${locale}/privacidad`}
+                  className="underline underline-offset-2 hover:text-[#EE6A2B]"
+                >
                   {copy.footer.privacidad}
-                </span>
+                </Link>
               </li>
               <li>
-                <span title={site.legalPagesTodo.cookies}>
+                <Link
+                  href={`/${locale}/cookies`}
+                  className="underline underline-offset-2 hover:text-[#EE6A2B]"
+                >
                   {copy.footer.cookies}
-                </span>
+                </Link>
               </li>
             </ul>
           </div>

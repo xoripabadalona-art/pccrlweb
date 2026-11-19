@@ -117,7 +117,7 @@ export const copyCa: LocaleCopy = {
   reviewsSection: {
     eyebrow: 'Opinions reals',
     heading: 'El que diuen els nostres veïns a Google',
-    body: 'No inventem ressenyes ni estrelles. Consulta les opinions verificades directament a la nostra fitxa de Google Maps o deixa’ns la teva valoració després de la teva visita.',
+    body: 'Opinions de clients reals, tal com apareixen a la nostra fitxa de Google. Si ja ens has visitat, explica’ns què t’ha semblat.',
     ctaReadGoogle: 'Llegeix les opinions dels nostres clients a Google',
     ctaWriteGoogle: 'Escriure una ressenya a Google',
     ratingSuffix: 'segons Google, actualitzat el',
@@ -197,12 +197,12 @@ export const copyCa: LocaleCopy = {
     tagline:
       'Pizzeria artesanal a Badalona. Massa amb 48 hores de fermentació, ingredients de primeríssima qualitat i empanades.',
     navigationTitle: 'Navegació',
-    contactTitle: 'Contacte (NAP)',
+    contactTitle: 'Contacte',
     socialTitle: 'Segueix-nos',
-    legalTitle: 'Legal (TODO)',
-    avisoLegal: 'Avís legal (TODO)',
-    privacidad: 'Política de privacitat (TODO)',
-    cookies: 'Política de galetes (TODO)',
+    legalTitle: 'Legal',
+    avisoLegal: 'Avís legal',
+    privacidad: 'Política de privacitat',
+    cookies: 'Política de galetes',
     rights: 'Tots els drets reservats.',
   },
 };
