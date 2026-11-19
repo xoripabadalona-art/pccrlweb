@@ -1,16 +1,12 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import { site } from '@/data/site';
 import { getCopy, type Locale } from '@/data/copy';
 
 export interface HeroStoryProps {
   locale: Locale;
 }
-
-const HERO_BLUR_DATA_URL =
-  'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSI5Ij48cmVjdCB3aWR0aD0iMTYiIGhlaWdodD0iOSIgZmlsbD0iIzFGMThBMyIvPjxyZWN0IHk9IjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSI1IiBmaWxsPSIjMTQxMTBGIi8+PC9zdmc+';
 
 export function HeroStory({ locale }: HeroStoryProps) {
   const copy = getCopy(locale);
@@ -46,13 +42,21 @@ export function HeroStory({ locale }: HeroStoryProps) {
       gsap.registerPlugin(ScrollTrigger);
 
       ctx = gsap.context(() => {
-        gsap.set(interiorLayerRef.current, { opacity: 0, scale: 1.08 });
+        gsap.set(storefrontLayerRef.current, {
+          scale: 1,
+          transformOrigin: '60% 58%',
+        });
+        gsap.set(interiorLayerRef.current, {
+          opacity: 0,
+          scale: 1.22,
+          transformOrigin: '50% 50%',
+        });
 
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top top',
-            end: '+=95%',
+            end: '+=105%',
             pin: pinViewportRef.current,
             scrub: 0.5,
             onUpdate: (self) => {
@@ -62,18 +66,16 @@ export function HeroStory({ locale }: HeroStoryProps) {
           },
         });
 
-        // Slight zoom into the storefront door as interior cross-fades in (like video frame_001 -> frame_003)
-        if (storefrontLayerRef.current) {
-          tl.to(
-            storefrontLayerRef.current,
-            {
-              scale: 1.06,
-              ease: 'power1.inOut',
-              duration: 1,
-            },
-            0
-          );
-        }
+        // Camera zooms through the front glass door of the 3D exterior pizzeria (matching video f_006 -> f_010 -> f_014)
+        tl.to(
+          storefrontLayerRef.current,
+          {
+            scale: 2.15,
+            ease: 'power2.inOut',
+            duration: 1,
+          },
+          0
+        );
 
         tl.to(
           interiorLayerRef.current,
@@ -81,9 +83,9 @@ export function HeroStory({ locale }: HeroStoryProps) {
             opacity: 1,
             scale: 1,
             ease: 'power2.inOut',
-            duration: 1,
+            duration: 0.78,
           },
-          0
+          0.22
         );
       }, sectionRef);
     })();
@@ -105,36 +107,31 @@ export function HeroStory({ locale }: HeroStoryProps) {
       aria-label={copy.heroStory.h1}
       className="relative w-full bg-[#14110F] text-[#F9F4EC]"
     >
-      {/* Server-rendered H1 for SEO and screen readers while keeping the 3D storefront artwork unobstructed like the reference video */}
+      {/* Server-rendered H1 for SEO and screen readers */}
       <h1 className="sr-only">{copy.heroStory.h1}</h1>
 
       <div
         ref={pinViewportRef}
         className="relative h-[68vh] min-h-[440px] max-h-[760px] w-full overflow-hidden sm:h-[74vh] md:h-[80vh]"
       >
-        {/* Slide 1: 3D Storefront of La Piccerella at dusk (with glowing LA PICCERELLA neon sign, oven window, OPEN neon & checkered interior) */}
+        {/* Slide 1: 3D Exterior Pizzeria Building at Dusk (with glowing LA PICCERELLA neon sign, striped awning, OPEN neon & warm interior) */}
         <div
           ref={storefrontLayerRef}
           className="absolute inset-0 z-0 will-change-transform"
         >
-          <Image
-            src="/images/hero-storefront.webp"
+          <img
+            src="/images/hero-storefront-3d-v2.webp"
             alt={`${site.name} — ${copy.heroStory.slide1Label}`}
             width={1920}
             height={1080}
-            priority
             fetchPriority="high"
-            placeholder="blur"
-            blurDataURL={HERO_BLUR_DATA_URL}
-            sizes="100vw"
             className="h-full w-full object-cover object-center"
           />
-          {/* Subtle top vignette only for navbar legibility — center of facade stays 100% clean */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#14110F]/70 to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#14110F]/55 to-transparent" />
         </div>
 
-        {/* Slide 2: 3D Warm Interior of La Piccerella (cross-fades with scale 1.08 -> 1 on scroll) */}
+        {/* Slide 2: 3D Warm Interior of La Piccerella (camera flies through the glass door into the dining room) */}
         <div
           ref={interiorLayerRef}
           className="absolute inset-0 z-10 will-change-transform"
@@ -150,13 +147,11 @@ export function HeroStory({ locale }: HeroStoryProps) {
             transition: manualSlide !== null ? 'opacity 0.45s ease' : undefined,
           }}
         >
-          <Image
-            src="/images/hero-interior.webp"
+          <img
+            src="/images/hero-interior-3d-v2.webp"
             alt={`${site.name} — ${copy.heroStory.slide2Label}`}
             width={1920}
             height={1080}
-            loading="eager"
-            sizes="100vw"
             className="h-full w-full object-cover object-center"
           />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#14110F]/70 to-transparent" />
