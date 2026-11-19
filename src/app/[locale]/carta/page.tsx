@@ -42,6 +42,7 @@ export async function generateMetadata({
       languages: {
         'es-ES': `${siteUrl}/es/carta`,
         'ca-ES': `${siteUrl}/ca/carta`,
+        'x-default': `${siteUrl}/es/carta`,
       },
     },
     openGraph: {

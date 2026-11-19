@@ -104,10 +104,63 @@ test.describe('La Piccerella E2E Smoke, Reduced Motion, NAP & Accessibility', ()
     await expect(page.getByTestId('exploded-order-now-cta')).toContainText('Pepperoni');
 
     // Every pizza card in the menu shows its own 3D render instead of a flat photo
+    await page.goto('/es/carta');
     const margaritaImg = page.locator('#menu-item-pizza-margarita img');
     await expect(margaritaImg).toHaveAttribute('src', /pizzas-3d\/pizza-margarita/);
     const carbonaraImg = page.locator('#menu-item-pizza-carbonara img');
     await expect(carbonaraImg).toHaveAttribute('src', /pizzas-3d\/pizza-carbonara/);
+  });
+
+  test('home shows a selection and links to the full menu; / points to /es as the original', async ({
+    page,
+    request,
+  }) => {
+    await page.goto('/es');
+    const cards = page.locator('#carta [data-testid^="menu-item-"]');
+    await expect(cards).toHaveCount(6);
+    await expect(page.getByTestId('home-full-menu-link')).toHaveAttribute('href', '/es/carta');
+
+    await page.goto('/es/carta');
+    expect(await page.locator('[data-testid^="menu-item-"]').count()).toBeGreaterThan(30);
+
+    // The bare domain serves the Spanish home but declares /es as canonical
+    await page.goto('/');
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      'https://lapiccerella.es/es'
+    );
+
+    // Catalan pages declare Catalan in the HTML itself, before any script runs
+    const caHtml = await (await request.get('/ca')).text();
+    expect(caHtml).toContain('<html lang="ca"');
+    const esHtml = await (await request.get('/es')).text();
+    expect(esHtml).toContain('<html lang="es"');
+  });
+
+  test('focused pages exist in both languages, with their own address and an order button', async ({
+    page,
+  }) => {
+    await page.goto('/es/empanadas-argentinas-badalona');
+    await expect(page.locator('h1')).toHaveText('Empanadas argentinas en Badalona');
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      'https://lapiccerella.es/es/empanadas-argentinas-badalona'
+    );
+    await expect(
+      page.locator('link[rel="alternate"][hreflang="ca-ES"]')
+    ).toHaveAttribute('href', 'https://lapiccerella.es/ca/empanades-argentines-badalona');
+    await expect(page.locator('#productos [data-testid^="menu-item-"]')).toHaveCount(5);
+
+    // Ordering works straight from the page
+    await page.getByTestId('add-to-order-empanada-carne').click();
+    await expect(page.getByTestId('navbar-basket-count')).toHaveText('1');
+
+    await page.goto('/ca/pizza-per-emportar-badalona');
+    await expect(page.locator('h1')).toHaveText('Pizza per emportar a Badalona');
+
+    await page.goto('/es/pack-degustacion-pizzas');
+    await expect(page.locator('h1')).toContainText('34,99 €');
+    await expect(page.locator('main')).not.toContainText('TODO');
   });
 
   test('legal pages are reachable from the footer in both languages', async ({ page }) => {
@@ -154,6 +207,12 @@ test.describe('La Piccerella E2E Smoke, Reduced Motion, NAP & Accessibility', ()
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze();
     expect(cartaResults.violations).toEqual([]);
+
+    await page.goto('/es/pizza-para-llevar-badalona');
+    const landingResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze();
+    expect(landingResults.violations).toEqual([]);
 
     await page.goto('/es/aviso-legal');
     const legalResults = await new AxeBuilder({ page })

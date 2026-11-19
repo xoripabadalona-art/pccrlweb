@@ -784,9 +784,8 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Ou'],
     },
     vegetarian: false,
-    image: '/images/real/storefront-close.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply close-up photo of Empanada de Carne cortada a cuchillo',
+    image: '/images/menu/empanada-carne.png',
+    placeholder: false,
   },
   {
     id: 'empanada-jamon-queso',
@@ -807,9 +806,8 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: false,
-    image: '/images/real/storefront-close.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply close-up photo of Empanada de Jamón y Queso',
+    image: '/images/menu/empanada-jamon-queso.png',
+    placeholder: false,
   },
   {
     id: 'empanada-pollo',
@@ -830,9 +828,8 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Ou'],
     },
     vegetarian: false,
-    image: '/images/real/storefront-close.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply close-up photo of Empanada de Pollo',
+    image: '/images/menu/empanada-pollo.png',
+    placeholder: false,
   },
   {
     id: 'empanada-cuatro-quesos',
@@ -853,9 +850,8 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: true,
-    image: '/images/real/storefront-close.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply close-up photo of Empanada Cuatro Quesos',
+    image: '/images/menu/empanada-cuatro-quesos.png',
+    placeholder: false,
   },
   {
     id: 'empanada-queso-cebolla',
@@ -876,9 +872,8 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: true,
-    image: '/images/real/storefront-close.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply close-up photo of Empanada de Queso y Cebolla',
+    image: '/images/menu/empanada-queso-cebolla.png',
+    placeholder: false,
   },
 
   // ─── BEBIDAS Y CERVEZAS ───────────────────────────────────────────────────
@@ -890,7 +885,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/bebida-coca-cola.png',
     placeholder: false,
   },
   {
@@ -901,7 +896,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/bebida-coca-cola-zero.png',
     placeholder: false,
   },
   {
@@ -912,7 +907,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/bebida-fanta-naranja.png',
     placeholder: false,
   },
   {
@@ -923,7 +918,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/bebida-aquarius-limon.png',
     placeholder: false,
   },
   {
@@ -934,7 +929,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/bebida-sprite.png',
     placeholder: false,
   },
   {
@@ -945,7 +940,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/bebida-fuze-tea.png',
     placeholder: false,
   },
   {
@@ -956,7 +951,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/bebida-agua-sin-gas.png',
     placeholder: false,
   },
   {
@@ -967,7 +962,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/bebida-agua-con-gas.png',
     placeholder: false,
   },
   {
@@ -984,7 +979,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 250,
     allergens: { es: ['Gluten'], ca: ['Gluten'] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/cerveza-estrella-tirador.png',
     placeholder: false,
   },
   {
@@ -995,7 +990,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 250,
     allergens: { es: ['Gluten'], ca: ['Gluten'] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/cerveza-1906-tirador.png',
     placeholder: false,
   },
   {
@@ -1006,7 +1001,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 250,
     allergens: { es: ['Gluten'], ca: ['Gluten'] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/cerveza-estrella-lata.png',
     placeholder: false,
   },
   {
@@ -1020,7 +1015,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 250,
     allergens: { es: ['Gluten'], ca: ['Gluten'] },
     vegetarian: true,
-    image: '/images/real/interior-day.webp',
+    image: '/images/menu/cerveza-estrella-sin-alcohol.png',
     placeholder: false,
   },
 ];
@@ -1060,4 +1055,24 @@ export function getMenuItem3dImage(item: MenuItem): string | undefined {
 export function getMenuItemPhoto(item: MenuItem): string | undefined {
   if (item.placeholder || item.image.startsWith('/images/real/')) return undefined;
   return item.image;
+}
+
+/**
+ * The short selection shown on the home page — one taste of every part of the
+ * menu. The complete, indexable menu lives on /carta only, so the two pages do
+ * not repeat each other.
+ */
+export const HOME_HIGHLIGHT_IDS = [
+  'pizza-pepperoni',
+  'pizza-4-quesos',
+  'pizza-barbacoa',
+  'pizza-carbonara',
+  'pack-degustacion-familiar',
+  'empanada-carne',
+];
+
+export function getHomeHighlights(): MenuItem[] {
+  return HOME_HIGHLIGHT_IDS.map((id) => getMenuItemById(id)).filter(
+    (item): item is MenuItem => Boolean(item)
+  );
 }

@@ -10,9 +10,11 @@ import { Button } from './Button';
 export interface NavbarProps {
   locale: Locale;
   currentPath?: 'home' | 'carta';
+  /** Address of this same page in the other language (defaults to the home or the menu) */
+  alternateHref?: string;
 }
 
-export function Navbar({ locale, currentPath = 'home' }: NavbarProps) {
+export function Navbar({ locale, currentPath = 'home', alternateHref: alternateOverride }: NavbarProps) {
   const copy = getCopy(locale);
   const items = useBasketStore((s) => s.items);
   const openDrawer = useBasketStore((s) => s.openDrawer);
@@ -86,7 +88,8 @@ export function Navbar({ locale, currentPath = 'home' }: NavbarProps) {
   const homePrefix = `/${locale}`;
   const alternateLocale: Locale = locale === 'es' ? 'ca' : 'es';
   const alternateHref =
-    currentPath === 'carta' ? `/${alternateLocale}/carta` : `/${alternateLocale}`;
+    alternateOverride ??
+    (currentPath === 'carta' ? `/${alternateLocale}/carta` : `/${alternateLocale}`);
 
   const navBgClass = scrolled
     ? onLightSection

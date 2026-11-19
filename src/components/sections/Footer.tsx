@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { site } from '@/data/site';
 import { getCopy, type Locale } from '@/data/copy';
+import { LANDING_IDS, getLanding, getLandingPath } from '@/data/landings';
 
 export interface FooterProps {
   locale: Locale;
@@ -90,6 +91,13 @@ export function Footer({ locale }: FooterProps) {
                   {copy.faqSection.eyebrow}
                 </Link>
               </li>
+              {LANDING_IDS.map((id) => (
+                <li key={id}>
+                  <Link href={getLandingPath(id, locale)} className="hover:text-[#EE6A2B]">
+                    {getLanding(id, locale).linkLabel}
+                  </Link>
+                </li>
+              ))}
               <li className="pt-2">
                 <div className="inline-flex items-center gap-2 rounded-full border border-[#F9F4EC]/20 px-3 py-1 text-xs">
                   <Link

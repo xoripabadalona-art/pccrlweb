@@ -3,7 +3,7 @@ import type { LocaleCopy } from './copy.es';
 export const copyCa: LocaleCopy = {
   locale: 'ca',
   seo: {
-    homeTitle: 'La Piccerella | Pizzeria artesanal a Badalona',
+    homeTitle: 'Pizzeria a Badalona · Pizza per emportar | La Piccerella',
     homeDescription:
       'Pizzeria artesanal a Badalona (Carrer de Mar, 127). Pizzes, pizzetes des de 3 € i empanades argentines amb massa fermentada 48 h. Demana per WhatsApp.',
     cartaTitle: 'Carta i Preus | La Piccerella Badalona',

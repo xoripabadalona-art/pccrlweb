@@ -6,7 +6,7 @@ import { Navbar } from '@/components/ui/Navbar';
 import { ScrollProgressDots } from '@/components/ui/ScrollProgressDots';
 import { IntroCream } from '@/components/sections/IntroCream';
 import { ExplodedPizza } from '@/components/sections/ExplodedPizza';
-import { Menu } from '@/components/sections/Menu';
+import { MenuHighlights } from '@/components/sections/MenuHighlights';
 import { Story } from '@/components/sections/Story';
 import { Reviews } from '@/components/sections/Reviews';
 import { Location } from '@/components/sections/Location';
@@ -47,6 +47,7 @@ export async function generateMetadata({
       languages: {
         'es-ES': `${siteUrl}/es`,
         'ca-ES': `${siteUrl}/ca`,
+        'x-default': `${siteUrl}/es`,
       },
     },
     openGraph: {
@@ -96,7 +97,7 @@ export default async function LocaleHomePage({
       <main id="main-content" className="flex-1">
         <ExplodedPizza locale={locale} />
         <IntroCream locale={locale} />
-        <Menu locale={locale} />
+        <MenuHighlights locale={locale} />
         <Story locale={locale} />
         <Reviews locale={locale} />
         <Location locale={locale} />

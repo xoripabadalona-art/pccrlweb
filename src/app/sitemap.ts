@@ -1,4 +1,6 @@
 import type { MetadataRoute } from 'next';
+import { locales } from '@/data/copy';
+import { LANDING_IDS, getLandingPath } from '@/data/landings';
 
 export const dynamic = 'force-static';
 
@@ -59,5 +61,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
         },
       },
     },
+    // Focused pages, each with its own translated address
+    ...LANDING_IDS.flatMap((id) =>
+      locales.map((locale) => ({
+        url: `${siteUrl}${getLandingPath(id, locale)}`,
+        lastModified: now,
+        changeFrequency: 'monthly' as const,
+        priority: 0.8,
+        alternates: {
+          languages: {
+            'es-ES': `${siteUrl}${getLandingPath(id, 'es')}`,
+            'ca-ES': `${siteUrl}${getLandingPath(id, 'ca')}`,
+          },
+        },
+      }))
+    ),
   ];
 }

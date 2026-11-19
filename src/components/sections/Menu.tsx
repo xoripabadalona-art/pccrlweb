@@ -22,7 +22,7 @@ export interface MenuSectionProps {
   showFullPageLink?: boolean;
 }
 
-function MenuItemCard({ item, locale }: { item: MenuItem; locale: Locale }) {
+export function MenuItemCard({ item, locale }: { item: MenuItem; locale: Locale }) {
   const copy = getCopy(locale);
   const addItem = useBasketStore((s) => s.addItem);
 

@@ -63,7 +63,11 @@ export async function LegalPageView({
 
   return (
     <>
-      <Navbar locale={locale} currentPath="carta" />
+      <Navbar
+        locale={locale}
+        currentPath="carta"
+        alternateHref={`/${locale === 'es' ? 'ca' : 'es'}/${id}`}
+      />
 
       <main id="main-content" className="flex-1 bg-[#F4EBDD] pt-24 text-[#1A1512]">
         <article className="mx-auto max-w-3xl px-4 pt-6 pb-20 md:px-8">
