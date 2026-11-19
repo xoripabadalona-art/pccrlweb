@@ -1,0 +1,127 @@
+@import 'tailwindcss';
+
+:root {
+  /* Brand design tokens derived from the real La Piccerella circular emblem */
+  --color-charcoal: #14110f;
+  --color-brown: #1f1813;
+  --color-brown-light: #2c221b;
+  --color-cream: #f4ebdd;
+  --color-cream-light: #faf5ed;
+  --color-cream-dark: #e5d7c3;
+  --color-tomato: #c8372d;
+  --color-basil: #3f6b3a;
+  --color-orange: #ee6a2b;
+  --color-orange-hover: #d95a1e;
+  --color-whatsapp: #25d366;
+  --color-whatsapp-dark: #128c7e;
+  --color-ink: #1a1512;
+  --color-ink-muted: #574b42;
+  --color-ivory: #f9f4ec;
+  --color-stone-muted: #cbbba8;
+
+  /* Fluid typography scale with clamp() */
+  --text-display: clamp(2.125rem, 4.5vw + 1rem, 4.25rem);
+  --text-h2: clamp(1.75rem, 3vw + 0.75rem, 3rem);
+  --text-h3: clamp(1.25rem, 1.5vw + 0.75rem, 1.625rem);
+  --text-lead: clamp(1.0625rem, 0.6vw + 0.9rem, 1.25rem);
+  --text-body: 1rem;
+
+  /* Shape & elevation tokens (8-pt grid, 24px card radius) */
+  --radius-card: 1.5rem;
+  --radius-pill: 9999px;
+  --shadow-cream: 0 14px 34px -10px rgba(20, 17, 15, 0.12), 0 4px 12px -2px rgba(20, 17, 15, 0.06);
+  --shadow-dark-glow: 0 20px 50px -12px rgba(238, 106, 43, 0.22);
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--color-charcoal);
+  color: var(--color-ivory);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-color: var(--color-charcoal);
+  color: var(--color-ivory);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-serif-heading {
+  font-family: var(--font-serif), Georgia, serif;
+}
+
+/* Visible accessible focus rings for keyboard navigation */
+:focus-visible {
+  outline: 3px solid var(--color-orange);
+  outline-offset: 3px;
+}
+
+/* Subtle idle float animation for SignatureHero pizza */
+@keyframes pizzaFloat {
+  0%,
+  100% {
+    transform: translateY(-8px);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+@keyframes steamDrift {
+  0% {
+    opacity: 0.18;
+    transform: translateY(10px) scale(0.96);
+  }
+  50% {
+    opacity: 0.36;
+    transform: translateY(-12px) scale(1.04);
+  }
+  100% {
+    opacity: 0.18;
+    transform: translateY(10px) scale(0.96);
+  }
+}
+
+.animate-pizza-float {
+  animation: pizzaFloat 6s ease-in-out infinite;
+}
+
+.animate-steam-drift {
+  animation: steamDrift 7s ease-in-out infinite;
+}
+
+/* Respect prefers-reduced-motion: disable continuous animations and smooth scroll */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-pizza-float,
+  .animate-steam-drift {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Respect High Contrast / forced-colors mode */
+@media (forced-colors: active) {
+  .btn-pill,
+  .card-surface {
+    border: 2px solid ButtonText;
+  }
+}
