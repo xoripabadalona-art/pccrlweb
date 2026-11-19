@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { site } from '@/data/site';
 import { getCopy, type Locale } from '@/data/copy';
+import { LaPiccerella3DCubeHero } from './LaPiccerella3DCubeHero';
 
 export interface HeroStoryProps {
   locale: Locale;
@@ -44,7 +45,7 @@ export function HeroStory({ locale }: HeroStoryProps) {
       ctx = gsap.context(() => {
         gsap.set(storefrontLayerRef.current, {
           scale: 1,
-          transformOrigin: '60% 58%',
+          transformOrigin: '60% 66%',
         });
         gsap.set(interiorLayerRef.current, {
           opacity: 0,
@@ -114,24 +115,24 @@ export function HeroStory({ locale }: HeroStoryProps) {
         ref={pinViewportRef}
         className="relative h-[68vh] min-h-[440px] max-h-[760px] w-full overflow-hidden sm:h-[74vh] md:h-[80vh]"
       >
-        {/* Slide 1: 3D Exterior Pizzeria Building at Dusk (with glowing LA PICCERELLA neon sign, striped awning, OPEN neon & warm interior) */}
+        {/* Slide 1: 3D Disney/Pixar Clay Miniature Cube Storefront of La Piccerella with giant rooftop pizza slice & animated Gustavo */}
         <div
           ref={storefrontLayerRef}
-          className="absolute inset-0 z-0 will-change-transform"
+          className="absolute inset-0 z-0 flex items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_50%_46%,_#3E2822_0%,_#221816_58%,_#14110F_100%)] pt-14 pb-8 px-3 sm:pt-16 sm:pb-10 will-change-transform"
         >
-          <img
-            src="/images/hero-storefront-3d-v2.webp"
-            alt={`${site.name} — ${copy.heroStory.slide1Label}`}
-            width={1920}
-            height={1080}
-            fetchPriority="high"
-            className="h-full w-full object-cover object-center"
+          {/* Warm soft Pixar studio rim glow behind the 3D clay cube building */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 left-1/2 h-[78%] w-[min(92vw,760px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(255,176,94,0.22)_0%,_rgba(238,106,43,0.08)_46%,_transparent_74%)] blur-2xl"
           />
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#14110F]/70 to-transparent" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#14110F]/55 to-transparent" />
+          <div className="relative z-10 flex h-full w-full max-w-[820px] items-center justify-center">
+            <LaPiccerella3DCubeHero />
+          </div>
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#14110F]/60 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#14110F]/45 to-transparent" />
         </div>
 
-        {/* Slide 2: 3D Warm Interior of La Piccerella (camera flies through the glass door into the dining room) */}
+        {/* Slide 2: Stylized Warm Interior of La Piccerella (camera flies through the open doorway into the dining room) */}
         <div
           ref={interiorLayerRef}
           className="absolute inset-0 z-10 will-change-transform"
@@ -148,14 +149,14 @@ export function HeroStory({ locale }: HeroStoryProps) {
           }}
         >
           <img
-            src="/images/hero-interior-3d-v2.webp"
+            src="/images/hero-interior-cube-v3.webp"
             alt={`${site.name} — ${copy.heroStory.slide2Label}`}
             width={1920}
             height={1080}
             className="h-full w-full object-cover object-center"
           />
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#14110F]/70 to-transparent" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#14110F]/55 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#14110F]/65 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#14110F]/55 to-transparent" />
         </div>
 
         {/* Minimal horizontal dash slide indicators at bottom center (matching video frame_001 & frame_003) */}

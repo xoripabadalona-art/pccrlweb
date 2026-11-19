@@ -97,13 +97,80 @@ h3,
 }
 
 /* Respect prefers-reduced-motion: disable continuous animations and smooth scroll */
+@keyframes gustavoWave {
+  0%,
+  100% {
+    transform: rotate(-9deg);
+  }
+  50% {
+    transform: rotate(13deg);
+  }
+}
+
+@keyframes gustavoPeelBob {
+  0%,
+  100% {
+    transform: rotate(-2.8deg) translateY(0px);
+  }
+  50% {
+    transform: rotate(3.2deg) translateY(-2.5px);
+  }
+}
+
+@keyframes gustavoBreathe {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(-0.6deg);
+  }
+  50% {
+    transform: translateY(-2px) rotate(0.7deg);
+  }
+}
+
+@keyframes gustavoBlink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.08);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gustavo-wave-arm {
+    animation: gustavoWave 1.3s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .gustavo-peel-arm {
+    animation: gustavoPeelBob 2.6s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .gustavo-body {
+    animation: gustavoBreathe 3s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .gustavo-eyes {
+    animation: gustavoBlink 4.6s ease-in-out infinite;
+    will-change: transform;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
 
   .animate-pizza-float,
-  .animate-steam-drift {
+  .animate-steam-drift,
+  .gustavo-wave-arm,
+  .gustavo-peel-arm,
+  .gustavo-body,
+  .gustavo-eyes {
     animation: none !important;
     transform: none !important;
   }
