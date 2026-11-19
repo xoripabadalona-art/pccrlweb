@@ -1,5 +1,10 @@
 @import 'tailwindcss';
 
+/* Landscape desktop: room for headline and 3D diorama side by side */
+@custom-variant wide (@media (min-width: 1024px) and (min-aspect-ratio: 5/4));
+/* Landscape but too narrow for two columns (small laptops, phones on their side) */
+@custom-variant squat (@media (max-width: 1023px) and (min-aspect-ratio: 17/20));
+
 :root {
   /* Brand design tokens derived from the real La Piccerella circular emblem */
   --color-charcoal: #14110f;
