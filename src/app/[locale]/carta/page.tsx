@@ -8,6 +8,13 @@ import { Menu } from '@/components/sections/Menu';
 import { Footer } from '@/components/sections/Footer';
 import { BasketDrawer } from '@/components/basket/BasketDrawer';
 import { FloatingWhatsApp } from '@/components/basket/FloatingWhatsApp';
+import {
+  buildBreadcrumbJsonLd,
+  buildMenuJsonLd,
+  buildRestaurantJsonLd,
+  JsonLd,
+} from '@/components/seo/JsonLd';
+import { AnalyticsAndConsent } from '@/components/seo/AnalyticsAndConsent';
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lapiccerella.es').replace(
   /\/$/,
@@ -53,6 +60,12 @@ export async function generateMetadata({
         },
       ],
     },
+    twitter: {
+      card: 'summary_large_image',
+      title: copy.seo.cartaTitle,
+      description: copy.seo.cartaDescription,
+      images: [`${siteUrl}/images/og-default.jpg`],
+    },
   };
 }
 
@@ -65,8 +78,19 @@ export default async function CartaPage({
   const locale: Locale = isValidLocale(rawLocale) ? rawLocale : 'es';
   const copy = getCopy(locale);
 
+  const restaurantJsonLd = buildRestaurantJsonLd(locale);
+  const menuJsonLd = buildMenuJsonLd(locale);
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(locale, [
+    { name: site.name, url: `${siteUrl}/${locale}` },
+    { name: copy.nav.fullMenuPage, url: `${siteUrl}/${locale}/carta` },
+  ]);
+
   return (
     <>
+      <JsonLd id="jsonld-restaurant-carta" data={restaurantJsonLd} />
+      <JsonLd id="jsonld-menu" data={menuJsonLd} />
+      <JsonLd id="jsonld-breadcrumb" data={breadcrumbJsonLd} />
+
       <Navbar locale={locale} currentPath="carta" />
 
       <main id="main-content" className="flex-1 bg-[#F4EBDD] pt-24 text-[#1A1512]">
@@ -110,6 +134,7 @@ export default async function CartaPage({
       <Footer locale={locale} />
       <BasketDrawer locale={locale} />
       <FloatingWhatsApp locale={locale} />
+      <AnalyticsAndConsent locale={locale} />
     </>
   );
 }
