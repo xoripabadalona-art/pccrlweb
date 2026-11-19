@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
   workers: 1,
@@ -10,19 +10,20 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3123',
     trace: 'on-first-retry',
+    channel: 'chrome',
   },
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     },
     {
       name: 'mobile-chrome',
-      use: { ...devices['Pixel 7'] },
+      use: { ...devices['Pixel 7'], channel: 'chrome' },
     },
   ],
   webServer: {
-    command: 'npx serve out -l 3123',
+    command: 'node scripts/serve-out.mjs',
     url: 'http://localhost:3123',
     reuseExistingServer: !process.env.CI,
     timeout: 60000,

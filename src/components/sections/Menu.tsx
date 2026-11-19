@@ -162,7 +162,7 @@ export function Menu({ locale, showFullPageLink = true }: MenuSectionProps) {
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         {/* Heading */}
         <div className="mx-auto mb-10 max-w-3xl text-center">
-          <p className="mb-2 text-xs font-bold tracking-widest text-[#C8372D] uppercase">
+          <p className="mb-2 text-xs font-bold tracking-widest text-[#A8241B] uppercase">
             {copy.menuSection.eyebrow}
           </p>
           <h2
@@ -178,7 +178,7 @@ export function Menu({ locale, showFullPageLink = true }: MenuSectionProps) {
             <div className="mt-4">
               <Link
                 href={`/${locale}/carta`}
-                className="inline-flex items-center gap-1.5 text-sm font-bold text-[#C8372D] underline underline-offset-4 hover:text-[#1A1512]"
+                className="inline-flex items-center gap-1.5 text-sm font-bold text-[#A8241B] underline underline-offset-4 hover:text-[#1A1512]"
               >
                 {copy.menuSection.viewFullPageLink} →
               </Link>

@@ -36,7 +36,7 @@ export function Reviews({ locale }: ReviewsProps) {
       <div className="mx-auto max-w-5xl px-4 md:px-8">
         <div className="rounded-[24px] border border-[#1A1512]/12 bg-[#F4EBDD] p-8 shadow-md md:p-12">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="mb-2 text-xs font-bold tracking-widest text-[#C8372D] uppercase">
+            <p className="mb-2 text-xs font-bold tracking-widest text-[#A8241B] uppercase">
               {copy.reviewsSection.eyebrow}
             </p>
             <h2

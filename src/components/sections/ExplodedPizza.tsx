@@ -199,7 +199,7 @@ export function ExplodedPizza({ locale, useFrameSequence }: ExplodedPizzaProps) 
         });
 
         if (ctaRef.current) {
-          gsap.set(ctaRef.current, { opacity: 0.35, y: 12 });
+          gsap.set(ctaRef.current, { opacity: 1, y: 16, scale: 0.96 });
         }
 
         const tl = gsap.timeline({
@@ -269,6 +269,7 @@ export function ExplodedPizza({ locale, useFrameSequence }: ExplodedPizzaProps) 
             {
               opacity: 1,
               y: 0,
+              scale: 1,
               ease: 'power2.out',
               duration: 0.15,
             },

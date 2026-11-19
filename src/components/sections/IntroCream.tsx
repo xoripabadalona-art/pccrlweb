@@ -77,7 +77,7 @@ export function IntroCream({ locale }: IntroCreamProps) {
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         {/* Centered Serif Heading & Short Paragraph (Section 2.3 & 6.2) */}
         <div className="mx-auto mb-14 max-w-3xl text-center">
-          <p className="mb-3 text-xs font-bold tracking-widest text-[#C8372D] uppercase">
+          <p className="mb-3 text-xs font-bold tracking-widest text-[#A8241B] uppercase">
             {copy.introCream.eyebrow}
           </p>
           <h2
@@ -131,7 +131,7 @@ export function IntroCream({ locale }: IntroCreamProps) {
                 </div>
 
                 <div className="flex items-center justify-between gap-3 border-t border-[#1A1512]/10 pt-3.5">
-                  <span className="font-serif-heading text-lg font-bold text-[#C8372D]">
+                  <span className="font-serif-heading text-lg font-bold text-[#A8241B]">
                     {formatCents(item.priceCents)}
                   </span>
                   <Button
@@ -154,7 +154,7 @@ export function IntroCream({ locale }: IntroCreamProps) {
         <div className="mt-10 text-center">
           <a
             href="#carta"
-            className="inline-flex min-h-[44px] items-center gap-2 text-sm font-bold text-[#C8372D] underline underline-offset-4 hover:text-[#1A1512]"
+            className="inline-flex min-h-[44px] items-center gap-2 text-sm font-bold text-[#A8241B] underline underline-offset-4 hover:text-[#1A1512]"
           >
             {copy.introCream.viewAllLink}
           </a>

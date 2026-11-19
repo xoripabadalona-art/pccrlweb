@@ -18,7 +18,7 @@ export function Faq({ locale }: FaqProps) {
     >
       <div className="mx-auto max-w-4xl px-4 md:px-8">
         <div className="mb-12 text-center">
-          <p className="mb-2 text-xs font-bold tracking-widest text-[#C8372D] uppercase">
+          <p className="mb-2 text-xs font-bold tracking-widest text-[#A8241B] uppercase">
             {copy.faqSection.eyebrow}
           </p>
           <h2

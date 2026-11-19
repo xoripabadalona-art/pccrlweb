@@ -105,7 +105,7 @@ export function BasketDrawer({ locale }: BasketDrawerProps) {
                           {line.sizeLabel[locale]}
                         </p>
                       )}
-                      <p className="mt-0.5 text-xs font-semibold text-[#C8372D]">
+                      <p className="mt-0.5 text-xs font-semibold text-[#A8241B]">
                         {formatCents(line.lineTotalCents)}
                       </p>
                     </div>
@@ -139,7 +139,7 @@ export function BasketDrawer({ locale }: BasketDrawerProps) {
             <button
               type="button"
               onClick={clearBasket}
-              className="min-h-[44px] px-3 text-xs font-semibold text-[#C8372D] underline underline-offset-4 hover:text-[#1A1512] cursor-pointer"
+              className="min-h-[44px] px-3 text-xs font-semibold text-[#A8241B] underline underline-offset-4 hover:text-[#1A1512] cursor-pointer"
             >
               {copy.basket.clearBasket}
             </button>
