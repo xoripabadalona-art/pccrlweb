@@ -6,7 +6,6 @@ import { Navbar } from '@/components/ui/Navbar';
 import { ScrollProgressDots } from '@/components/ui/ScrollProgressDots';
 import { HeroStory } from '@/components/sections/HeroStory';
 import { IntroCream } from '@/components/sections/IntroCream';
-import { SignatureHero } from '@/components/sections/SignatureHero';
 import { ExplodedPizza } from '@/components/sections/ExplodedPizza';
 import { Menu } from '@/components/sections/Menu';
 import { Story } from '@/components/sections/Story';
@@ -98,7 +97,6 @@ export default async function LocaleHomePage({
       <main id="main-content" className="flex-1">
         <HeroStory locale={locale} />
         <IntroCream locale={locale} />
-        <SignatureHero locale={locale} />
         <ExplodedPizza locale={locale} />
         <Menu locale={locale} />
         <Story locale={locale} />

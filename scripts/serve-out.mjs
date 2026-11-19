@@ -2,7 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const PORT = Number(process.env.PORT ?? 3123);
+const PORT = Number(process.argv[2] ?? process.env.PORT ?? 3123);
 const OUT_DIR = path.resolve(process.cwd(), 'out');
 
 const MIME_TYPES = {

@@ -91,6 +91,27 @@ test.describe('La Piccerella E2E Smoke, Reduced Motion, NAP & Accessibility', ()
     await context.close();
   });
 
+  test('1:1 3D pizza carousel allows swiping/switching across all 15 pizzas and updates 3D layers & ingredients', async ({
+    page,
+  }) => {
+    await page.goto('/es');
+
+    // Default first 3D pizza is Pepperoni (12,00 €)
+    const stageHeading = page.locator('#exploded-pizza-heading');
+    await expect(stageHeading).toContainText('Pizza Pepperoni');
+
+    // Click next arrow to swipe 1:1 to Margarita (9,50 €)
+    await page.getByTestId('pizza-3d-next').click();
+    await expect(stageHeading).toContainText('Pizza Margarita');
+    await expect(stageHeading).toContainText('9,50 €');
+
+    // Select Carbonara directly via 1:1 pill bar and verify white sauce & Carbonara callouts
+    await page.getByTestId('pizza-3d-pill-pizza-carbonara').click();
+    await expect(stageHeading).toContainText('Pizza Carbonara');
+    await expect(stageHeading).toContainText('13,00 €');
+    await expect(page.locator('#exploded-pizza')).toContainText('Bacon y Huevo');
+  });
+
   test('passes axe-core WCAG AA accessibility audit on /es and /es/carta', async ({
     page,
   }) => {

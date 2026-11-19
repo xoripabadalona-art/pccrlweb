@@ -9,6 +9,25 @@ export interface MenuSizeOption {
   priceCents: number;
 }
 
+export interface Pizza3dLayerCallout {
+  title: { es: string; ca: string };
+  subtitle: { es: string; ca: string };
+  detail: { es: string; ca: string };
+}
+
+export interface Pizza3dConfig {
+  slug: string;
+  image3d: string;
+  floatingToppings3d: string;
+  sauceType: 'tomato' | 'white';
+  /** Top-left callout (points to Layer 1 / Crown & Toppings) */
+  calloutTopLeft: Pizza3dLayerCallout;
+  /** Bottom-left callout (points to Layer 3 / Cheese & Base) */
+  calloutBottomLeft: Pizza3dLayerCallout;
+  /** Top-right callout (points to Layer 2 / Signature ingredients) */
+  calloutTopRight: Pizza3dLayerCallout;
+}
+
 export interface MenuItem {
   id: string;
   category: MenuCategoryId;
@@ -30,9 +49,10 @@ export interface MenuItem {
   vegetarian?: boolean;
   featured?: boolean;
   image: string;
+  pizza3d?: Pizza3dConfig;
   /**
-   * Flagged true when any part of the item (such as individual dish photography or
-   * verified allergen chart) is still a placeholder awaiting client confirmation.
+   * Flagged true when any part of the item (such as individual dish photography)
+   * is still a placeholder awaiting client confirmation.
    */
   placeholder: boolean;
   placeholderNote?: string;
@@ -85,36 +105,8 @@ export const menuCategories: MenuCategory[] = [
   },
 ];
 
-/**
- * Menu items transcribed from the client's physical CARTA and storefront signage.
- * Note: Individual product photos (except Pepperoni) and official allergen cross-contamination
- * details are marked with `placeholder: true` so the build prints a verification report.
- */
 export const menuItems: MenuItem[] = [
-  // ─── PIZZAS ───────────────────────────────────────────────────────────────
-  {
-    id: 'pizza-margarita',
-    category: 'pizzas',
-    name: { es: 'Margarita', ca: 'Margarita' },
-    ingredients: {
-      es: 'Salsa de tomate, mozzarella y aceite de oliva',
-      ca: "Salsa de tomàquet, mozzarella i oli d'oliva",
-    },
-    priceCents: 950,
-    sizes: [
-      { id: 'grande', label: { es: 'Pizza entera', ca: 'Pizza sencera' }, priceCents: 950 },
-      { id: 'pizzeta', label: { es: 'Porción / Pizzeta (1/4)', ca: 'Porció / Pizzeta (1/4)' }, priceCents: 300 },
-    ],
-    allergens: {
-      es: ['Gluten', 'Lácteos'],
-      ca: ['Gluten', 'Làctics'],
-    },
-    vegetarian: true,
-    featured: true,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: replace shared pizza photo with dedicated Margarita photo & confirm allergens',
-  },
+  // ─── PIZZAS (15 varieties with real photos from assets/ and 1:1 3D models) ─
   {
     id: 'pizza-pepperoni',
     category: 'pizzas',
@@ -134,26 +126,72 @@ export const menuItems: MenuItem[] = [
     },
     vegetarian: false,
     featured: true,
-    image: '/images/real/pizza-pepperoni-box.webp',
+    image: '/images/menu/pizza-pepperoni.webp',
+    pizza3d: {
+      slug: 'pepperoni',
+      image3d: '/images/pizzas-3d/pizza-pepperoni.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-pepperoni.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Pepperoni crujiente', ca: 'Pepperoni cruixent' },
+        subtitle: { es: 'Rodajas curadas al horno', ca: 'Rodanxes curades al forn' },
+        detail: { es: 'Dorado al momento con toque especiado', ca: 'Daurat al moment amb toc especiat' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Mozzarella 100%', ca: 'Mozzarella 100%' },
+        subtitle: { es: 'Fundida y elástica', ca: 'Fosa i elàstica' },
+        detail: { es: 'Gratinado uniforme sobre salsa de tomate', ca: 'Gratinat uniforme sobre salsa de tomàquet' },
+      },
+      calloutTopRight: {
+        title: { es: 'Masa 48 h', ca: 'Massa 48 h' },
+        subtitle: { es: 'Fermentación lenta', ca: 'Fermentació lenta' },
+        detail: { es: 'Borde alveolado, ligero y digestivo', ca: 'Vora alveolada, lleugera i digestiva' },
+      },
+    },
     placeholder: false,
   },
   {
-    id: 'pizza-prosciutto',
+    id: 'pizza-margarita',
     category: 'pizzas',
-    name: { es: 'Prosciutto', ca: 'Prosciutto' },
+    name: { es: 'Margarita', ca: 'Margarita' },
     ingredients: {
-      es: 'Salsa de tomate, mozzarella y jamón dulce',
-      ca: 'Salsa de tomàquet, mozzarella i pernil dolç',
+      es: 'Salsa de tomate, mozzarella y aceite de oliva',
+      ca: "Salsa de tomàquet, mozzarella i oli d'oliva",
     },
-    priceCents: 1050,
+    priceCents: 950,
+    sizes: [
+      { id: 'grande', label: { es: 'Pizza entera', ca: 'Pizza sencera' }, priceCents: 950 },
+      { id: 'pizzeta', label: { es: 'Porción / Pizzeta (1/4)', ca: 'Porció / Pizzeta (1/4)' }, priceCents: 300 },
+    ],
     allergens: {
       es: ['Gluten', 'Lácteos'],
       ca: ['Gluten', 'Làctics'],
     },
-    vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza Prosciutto',
+    vegetarian: true,
+    featured: true,
+    image: '/images/menu/pizza-margarita.webp',
+    pizza3d: {
+      slug: 'margarita',
+      image3d: '/images/pizzas-3d/pizza-margarita.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-margarita.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Aceite de oliva', ca: "Oli d'oliva" },
+        subtitle: { es: 'Virgen extra', ca: 'Verge extra' },
+        detail: { es: 'Hilo aromático al salir del horno', ca: 'Fil aromàtic en sortir del forn' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Mozzarella hilada', ca: 'Mozzarella filada' },
+        subtitle: { es: 'Fundido cremoso', ca: 'Fos cremós' },
+        detail: { es: 'Equilibrio clásico con tomate natural', ca: 'Equilibri clàssic amb tomàquet natural' },
+      },
+      calloutTopRight: {
+        title: { es: 'Salsa de tomate', ca: 'Salsa de tomàquet' },
+        subtitle: { es: 'Receta tradicional', ca: 'Recepta tradicional' },
+        detail: { es: 'Extendida a cuchara sobre masa 48 h', ca: 'Estesa a cullera sobre massa 48 h' },
+      },
+    },
+    placeholder: false,
   },
   {
     id: 'pizza-prosciutto-funghi',
@@ -173,27 +211,106 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza Prosciutto e Funghi',
+    featured: true,
+    image: '/images/menu/pizza-prosciutto-funghi.webp',
+    pizza3d: {
+      slug: 'prosciutto-funghi',
+      image3d: '/images/pizzas-3d/pizza-prosciutto-funghi.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-prosciutto-funghi.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Champiñón fresco', ca: 'Xampinyó fresc' },
+        subtitle: { es: 'Laminado al horno', ca: 'Laminat al forn' },
+        detail: { es: 'Jugoso y asado sobre la mozzarella', ca: 'Sucós i rostit sobre la mozzarella' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Jamón dulce', ca: 'Pernil dolç' },
+        subtitle: { es: 'Lonchas tiernas', ca: 'Llesques tendres' },
+        detail: { es: 'Sabor suave que contrasta con el tomate', ca: 'Sabor suau que contrasta amb el tomàquet' },
+      },
+      calloutTopRight: {
+        title: { es: 'Mozzarella y Tomate', ca: 'Mozzarella i Tomàquet' },
+        subtitle: { es: 'Base artesanal 48 h', ca: 'Base artesanal 48 h' },
+        detail: { es: 'Horneado crujiente de fácil digestión', ca: 'Enfornat cruixent de fàcil digestió' },
+      },
+    },
+    placeholder: false,
   },
   {
-    id: 'pizza-bacon',
+    id: 'pizza-prosciutto',
     category: 'pizzas',
-    name: { es: 'Bacon', ca: 'Bacó' },
+    name: { es: 'Prosciutto', ca: 'Prosciutto' },
     ingredients: {
-      es: 'Salsa de tomate, mozzarella y bacon crujiente',
-      ca: 'Salsa de tomàquet, mozzarella i bacó cruixent',
+      es: 'Salsa de tomate, mozzarella y jamón dulce',
+      ca: 'Salsa de tomàquet, mozzarella i pernil dolç',
     },
-    priceCents: 1100,
+    priceCents: 1050,
     allergens: {
       es: ['Gluten', 'Lácteos'],
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza Bacon',
+    image: '/images/menu/pizza-prosciutto.webp',
+    pizza3d: {
+      slug: 'prosciutto',
+      image3d: '/images/pizzas-3d/pizza-prosciutto.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-prosciutto.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Jamón dulce', ca: 'Pernil dolç' },
+        subtitle: { es: 'Seleccionado', ca: 'Seleccionat' },
+        detail: { es: 'Pliegues tiernos sobre queso fundido', ca: 'Plecs tendres sobre formatge fos' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Mozzarella fundida', ca: 'Mozzarella fosa' },
+        subtitle: { es: 'Capa generosa', ca: 'Capa generosa' },
+        detail: { es: 'Gratinada a alta temperatura', ca: 'Gratinada a alta temperatura' },
+      },
+      calloutTopRight: {
+        title: { es: 'Tomate y Masa 48 h', ca: 'Tomàquet i Massa 48 h' },
+        subtitle: { es: 'Fermentación lenta', ca: 'Fermentació lenta' },
+        detail: { es: 'Textura fina, ligera y crujiente', ca: 'Textura fina, lleugera i cruixent' },
+      },
+    },
+    placeholder: false,
+  },
+  {
+    id: 'pizza-carbonara',
+    category: 'pizzas',
+    name: { es: 'Carbonara', ca: 'Carbonara' },
+    ingredients: {
+      es: 'Base blanca, mozzarella, crema de leche, cebolla caramelizada, bacon y huevo',
+      ca: 'Base blanca, mozzarella, crema de llet, ceba caramel·litzada, bacó i ou',
+    },
+    priceCents: 1300,
+    allergens: {
+      es: ['Gluten', 'Lácteos', 'Huevo'],
+      ca: ['Gluten', 'Làctics', 'Ou'],
+    },
+    vegetarian: false,
+    image: '/images/menu/pizza-carbonara.webp',
+    pizza3d: {
+      slug: 'carbonara',
+      image3d: '/images/pizzas-3d/pizza-carbonara.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-carbonara.webp',
+      sauceType: 'white',
+      calloutTopLeft: {
+        title: { es: 'Bacon y Huevo', ca: 'Bacó i Ou' },
+        subtitle: { es: 'Cebolla caramelizada', ca: 'Ceba caramel·litzada' },
+        detail: { es: 'Contraste dulce y ahumado al horno', ca: 'Contrast dolç i fumat al forn' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Base blanca cremosa', ca: 'Base blanca cremosa' },
+        subtitle: { es: 'Crema de leche y mozzarella', ca: 'Crema de llet i mozzarella' },
+        detail: { es: 'Fundido suave y envolvente', ca: 'Fos suau i envoltant' },
+      },
+      calloutTopRight: {
+        title: { es: 'Masa 48 h', ca: 'Massa 48 h' },
+        subtitle: { es: 'Crujiente por fuera', ca: 'Cruixent per fora' },
+        detail: { es: 'Sostiene la crema sin perder ligereza', ca: 'Sosté la crema sense perdre lleugeresa' },
+      },
+    },
+    placeholder: false,
   },
   {
     id: 'pizza-4-quesos',
@@ -209,27 +326,29 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: true,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza 4 Quesos',
-  },
-  {
-    id: 'pizza-atun',
-    category: 'pizzas',
-    name: { es: 'Atún', ca: 'Tonyina' },
-    ingredients: {
-      es: 'Salsa de tomate, mozzarella, atún, cebolla, pimiento y olivas negras',
-      ca: 'Salsa de tomàquet, mozzarella, tonyina, ceba, pebrot i olives negres',
+    image: '/images/menu/pizza-4-quesos.webp',
+    pizza3d: {
+      slug: '4-quesos',
+      image3d: '/images/pizzas-3d/pizza-4-quesos.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-4-quesos.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Cabra y Queso Azul', ca: 'Cabra i Formatge Blau' },
+        subtitle: { es: 'Carácter intenso', ca: 'Caràcter intens' },
+        detail: { es: 'Cremosidad y matices intensos en cada corte', ca: 'Cremositat i matisos intensos a cada tall' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Mozzarella y Parmesano', ca: 'Mozzarella i Parmesà' },
+        subtitle: { es: 'Gratinado dorado', ca: 'Gratinat daurat' },
+        detail: { es: 'Fusión de cuatro quesos seleccionados', ca: 'Fusió de quatre formatges seleccionats' },
+      },
+      calloutTopRight: {
+        title: { es: 'Salsa de tomate', ca: 'Salsa de tomàquet' },
+        subtitle: { es: 'Masa fermentada 48 h', ca: 'Massa fermentada 48 h' },
+        detail: { es: 'Base fina que equilibra los 4 quesos', ca: 'Base fina que equilibra els 4 formatges' },
+      },
     },
-    priceCents: 1200,
-    allergens: {
-      es: ['Gluten', 'Lácteos', 'Pescado'],
-      ca: ['Gluten', 'Làctics', 'Peix'],
-    },
-    vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza Atún',
+    placeholder: false,
   },
   {
     id: 'pizza-4-estaciones',
@@ -249,45 +368,29 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza 4 Estaciones',
-  },
-  {
-    id: 'pizza-carbonara',
-    category: 'pizzas',
-    name: { es: 'Carbonara', ca: 'Carbonara' },
-    ingredients: {
-      es: 'Base blanca, mozzarella, crema de leche, cebolla caramelizada, bacon y huevo',
-      ca: 'Base blanca, mozzarella, crema de llet, ceba caramel·litzada, bacó i ou',
+    image: '/images/menu/pizza-4-estaciones.webp',
+    pizza3d: {
+      slug: '4-estaciones',
+      image3d: '/images/pizzas-3d/pizza-4-estaciones.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-4-estaciones.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Jamón y Champiñones', ca: 'Pernil i Xampinyons' },
+        subtitle: { es: 'Olivas negras', ca: 'Olives negres' },
+        detail: { es: 'Clásico mediterráneo lleno de sabor', ca: 'Clàssic mediterrani ple de sabor' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Mozzarella fundida', ca: 'Mozzarella fosa' },
+        subtitle: { es: 'Salsa de tomate', ca: 'Salsa de tomàquet' },
+        detail: { es: 'Ingredientes frescos horneados al momento', ca: 'Ingredients frescos enfornats al moment' },
+      },
+      calloutTopRight: {
+        title: { es: 'Masa 48 h', ca: 'Massa 48 h' },
+        subtitle: { es: 'Fermentación lenta', ca: 'Fermentació lenta' },
+        detail: { es: 'Crujiente, ligera y de fácil digestión', ca: 'Cruixent, lleugera i de fàcil digestió' },
+      },
     },
-    priceCents: 1300,
-    allergens: {
-      es: ['Gluten', 'Lácteos', 'Huevo'],
-      ca: ['Gluten', 'Làctics', 'Ou'],
-    },
-    vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza Carbonara',
-  },
-  {
-    id: 'pizza-mexicana',
-    category: 'pizzas',
-    name: { es: 'Mexicana', ca: 'Mexicana' },
-    ingredients: {
-      es: 'Salsa de tomate, mozzarella, bacon, carne molida, pollo, maíz y salsa picante',
-      ca: 'Salsa de tomàquet, mozzarella, bacó, carn picada, pollastre, blat de moro i salsa picant',
-    },
-    priceCents: 1300,
-    allergens: {
-      es: ['Gluten', 'Lácteos'],
-      ca: ['Gluten', 'Làctics'],
-    },
-    vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza Mexicana',
+    placeholder: false,
   },
   {
     id: 'pizza-barbacoa',
@@ -307,9 +410,67 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza Barbacoa',
+    image: '/images/menu/pizza-barbacoa.webp',
+    pizza3d: {
+      slug: 'barbacoa',
+      image3d: '/images/pizzas-3d/pizza-barbacoa.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-barbacoa.webp',
+      sauceType: 'white',
+      calloutTopLeft: {
+        title: { es: 'Carne, Pollo y Bacon', ca: 'Carn, Pollastre i Bacó' },
+        subtitle: { es: 'Salsa Barbacoa', ca: 'Salsa Barbacoa' },
+        detail: { es: 'Toque ahumado y caramelizado al horno', ca: 'Toc fumat i caramel·litzat al forn' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Base blanca y Mozzarella', ca: 'Base blanca i Mozzarella' },
+        subtitle: { es: 'Cremosidad intensa', ca: 'Cremositat intensa' },
+        detail: { es: 'Fundido perfecto con la salsa BBQ', ca: 'Fos perfecte amb la salsa BBQ' },
+      },
+      calloutTopRight: {
+        title: { es: 'Masa 48 h', ca: 'Massa 48 h' },
+        subtitle: { es: 'Obrador artesanal', ca: 'Obrador artesanal' },
+        detail: { es: 'Base firme y borde aireado', ca: 'Base ferma i vora airejada' },
+      },
+    },
+    placeholder: false,
+  },
+  {
+    id: 'pizza-mexicana',
+    category: 'pizzas',
+    name: { es: 'Mexicana', ca: 'Mexicana' },
+    ingredients: {
+      es: 'Salsa de tomate, mozzarella, bacon, carne molida, pollo, maíz y salsa picante',
+      ca: 'Salsa de tomàquet, mozzarella, bacó, carn picada, pollastre, blat de moro i salsa picant',
+    },
+    priceCents: 1300,
+    allergens: {
+      es: ['Gluten', 'Lácteos'],
+      ca: ['Gluten', 'Làctics'],
+    },
+    vegetarian: false,
+    image: '/images/menu/pizza-mexicana.webp',
+    pizza3d: {
+      slug: 'mexicana',
+      image3d: '/images/pizzas-3d/pizza-mexicana.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-mexicana.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Carne, Pollo y Bacon', ca: 'Carn, Pollastre i Bacó' },
+        subtitle: { es: 'Maíz dulce y salsa picante', ca: 'Blat de moro i salsa picant' },
+        detail: { es: 'Contraste sabroso con un punto picante', ca: 'Contrast saborós amb un punt picant' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Mozzarella y Tomate', ca: 'Mozzarella i Tomàquet' },
+        subtitle: { es: 'Fundido generoso', ca: 'Fos generós' },
+        detail: { es: 'Une todos los ingredientes en cada porción', ca: 'Uneix tots els ingredients a cada porció' },
+      },
+      calloutTopRight: {
+        title: { es: 'Masa 48 h', ca: 'Massa 48 h' },
+        subtitle: { es: 'Fermentación lenta', ca: 'Fermentació lenta' },
+        detail: { es: 'Estirada a mano al momento', ca: 'Estirada a mà al moment' },
+      },
+    },
+    placeholder: false,
   },
   {
     id: 'pizza-pollo',
@@ -329,27 +490,29 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza Pollo',
-  },
-  {
-    id: 'pizza-vegetal',
-    category: 'pizzas',
-    name: { es: 'Vegetal', ca: 'Vegetal' },
-    ingredients: {
-      es: 'Salsa de tomate, mozzarella, tomates cherry, calabacín, cebolla y pimiento',
-      ca: 'Salsa de tomàquet, mozzarella, tomàquets cherry, carbassó, ceba i pebrot',
+    image: '/images/menu/pizza-pollo.webp',
+    pizza3d: {
+      slug: 'pollo',
+      image3d: '/images/pizzas-3d/pizza-pollo.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-pollo.webp',
+      sauceType: 'white',
+      calloutTopLeft: {
+        title: { es: 'Pollo, Setas y Parmesano', ca: 'Pollastre, Bolets i Parmesà' },
+        subtitle: { es: 'Cebolla caramelizada', ca: 'Ceba caramel·litzada' },
+        detail: { es: 'Lascas de parmesano y setas tiernas', ca: 'Llesques de parmesà i bolets tendres' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Base blanca y Crema', ca: 'Base blanca i Crema' },
+        subtitle: { es: 'Mozzarella fundida', ca: 'Mozzarella fosa' },
+        detail: { es: 'Suave, aromática y gratinada al horno', ca: 'Suau, aromàtica i gratinada al forn' },
+      },
+      calloutTopRight: {
+        title: { es: 'Masa 48 h', ca: 'Massa 48 h' },
+        subtitle: { es: 'Receta artesanal', ca: 'Recepta artesanal' },
+        detail: { es: 'Ligera, crujiente y muy digestiva', ca: 'Lleugera, cruixent i molt digestiva' },
+      },
     },
-    priceCents: 1200,
-    allergens: {
-      es: ['Gluten', 'Lácteos'],
-      ca: ['Gluten', 'Làctics'],
-    },
-    vegetarian: true,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza Vegetal',
+    placeholder: false,
   },
   {
     id: 'pizza-mallorquina',
@@ -365,9 +528,181 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply real photo for Pizza Mallorquina',
+    image: '/images/menu/pizza-mallorquina.webp',
+    pizza3d: {
+      slug: 'mallorquina',
+      image3d: '/images/pizzas-3d/pizza-mallorquina.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-mallorquina.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Sobrasada y Miel', ca: 'Sobrassada i Mel' },
+        subtitle: { es: 'Queso Brie fundido', ca: 'Formatge Brie fos' },
+        detail: { es: 'Equilibrio dulce-salado irresistible', ca: 'Equilibri dolç-salat irresistible' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Mozzarella y Brie', ca: 'Mozzarella i Brie' },
+        subtitle: { es: 'Doble cremosidad', ca: 'Doble cremositat' },
+        detail: { es: 'Fundidos sobre salsa de tomate natural', ca: 'Fosos sobre salsa de tomàquet natural' },
+      },
+      calloutTopRight: {
+        title: { es: 'Masa 48 h', ca: 'Massa 48 h' },
+        subtitle: { es: 'Fermentación lenta', ca: 'Fermentació lenta' },
+        detail: { es: 'Borde dorado y base fina crujiente', ca: 'Vora daurada i base fina cruixent' },
+      },
+    },
+    placeholder: false,
+  },
+  {
+    id: 'pizza-bacon',
+    category: 'pizzas',
+    name: { es: 'Bacon', ca: 'Bacó' },
+    ingredients: {
+      es: 'Salsa de tomate, mozzarella y bacon crujiente',
+      ca: 'Salsa de tomàquet, mozzarella i bacó cruixent',
+    },
+    priceCents: 1100,
+    allergens: {
+      es: ['Gluten', 'Lácteos'],
+      ca: ['Gluten', 'Làctics'],
+    },
+    vegetarian: false,
+    image: '/images/menu/pizza-bacon.webp',
+    pizza3d: {
+      slug: 'bacon',
+      image3d: '/images/pizzas-3d/pizza-bacon.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-bacon.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Bacon crujiente', ca: 'Bacó cruixent' },
+        subtitle: { es: 'Tiras ahumadas', ca: 'Tires fumades' },
+        detail: { es: 'Dorado al horno con sabor intenso', ca: 'Daurat al forn amb sabor intens' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Mozzarella fundida', ca: 'Mozzarella fosa' },
+        subtitle: { es: 'Salsa de tomate', ca: 'Salsa de tomàquet' },
+        detail: { es: 'Combinación clásica que nunca falla', ca: 'Combinació clàssica que mai falla' },
+      },
+      calloutTopRight: {
+        title: { es: 'Masa 48 h', ca: 'Massa 48 h' },
+        subtitle: { es: 'Fermentación lenta', ca: 'Fermentació lenta' },
+        detail: { es: 'Hecha a mano al momento', ca: 'Feta a mà al moment' },
+      },
+    },
+    placeholder: false,
+  },
+  {
+    id: 'pizza-atun',
+    category: 'pizzas',
+    name: { es: 'Atún', ca: 'Tonyina' },
+    ingredients: {
+      es: 'Salsa de tomate, mozzarella, atún, cebolla, pimiento y olivas negras',
+      ca: 'Salsa de tomàquet, mozzarella, tonyina, ceba, pebrot i olives negres',
+    },
+    priceCents: 1200,
+    allergens: {
+      es: ['Gluten', 'Lácteos', 'Pescado'],
+      ca: ['Gluten', 'Làctics', 'Peix'],
+    },
+    vegetarian: false,
+    image: '/images/menu/pizza-atun.webp',
+    pizza3d: {
+      slug: 'atun',
+      image3d: '/images/pizzas-3d/pizza-atun.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-atun.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Atún y Olivas negras', ca: 'Tonyina i Olives negres' },
+        subtitle: { es: 'Cebolla y pimiento', ca: 'Ceba i pebrot' },
+        detail: { es: 'Sabores marineros y huerta mediterránea', ca: 'Sabors mariners i horta mediterrània' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Mozzarella y Tomate', ca: 'Mozzarella i Tomàquet' },
+        subtitle: { es: 'Fundido equilibrado', ca: 'Fos equilibrat' },
+        detail: { es: 'Base jugosa y aromática', ca: 'Base sucosa i aromàtica' },
+      },
+      calloutTopRight: {
+        title: { es: 'Masa 48 h', ca: 'Massa 48 h' },
+        subtitle: { es: 'Carrer de Mar, 127', ca: 'Carrer de Mar, 127' },
+        detail: { es: 'Ligera, crujiente y recién horneada', ca: 'Lleugera, cruixent i acabada d’enfornar' },
+      },
+    },
+    placeholder: false,
+  },
+  {
+    id: 'pizza-vegetal',
+    category: 'pizzas',
+    name: { es: 'Vegetal', ca: 'Vegetal' },
+    ingredients: {
+      es: 'Salsa de tomate, mozzarella, tomates cherry, calabacín, cebolla y pimiento',
+      ca: 'Salsa de tomàquet, mozzarella, tomàquets cherry, carbassó, ceba i pebrot',
+    },
+    priceCents: 1200,
+    allergens: {
+      es: ['Gluten', 'Lácteos'],
+      ca: ['Gluten', 'Làctics'],
+    },
+    vegetarian: true,
+    image: '/images/menu/pizza-vegetal.webp',
+    pizza3d: {
+      slug: 'vegetal',
+      image3d: '/images/pizzas-3d/pizza-vegetal.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-vegetal.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Cherry y Calabacín', ca: 'Cherry i Carbassó' },
+        subtitle: { es: 'Cebolla y pimiento', ca: 'Ceba i pebrot' },
+        detail: { es: 'Verduras frescas laminadas y asadas al horno', ca: 'Verdures fresques laminades i rostides al forn' },
+      },
+      calloutBottomLeft: {
+        title: { es: '100% Vegetariana', ca: '100% Vegetariana' },
+        subtitle: { es: 'Mozzarella y tomate', ca: 'Mozzarella i tomàquet' },
+        detail: { es: 'Frescura de la huerta en cada porción', ca: 'Frescor de l’horta a cada porció' },
+      },
+      calloutTopRight: {
+        title: { es: 'Masa 48 h', ca: 'Massa 48 h' },
+        subtitle: { es: 'Fermentación lenta', ca: 'Fermentació lenta' },
+        detail: { es: 'Fina, crujiente y muy ligera', ca: 'Fina, cruixent i molt lleugera' },
+      },
+    },
+    placeholder: false,
+  },
+  {
+    id: 'pizza-prosciutto-olivas',
+    category: 'pizzas',
+    name: { es: 'Prosciutto con Olivas Negras', ca: 'Prosciutto amb Olives Negres' },
+    ingredients: {
+      es: 'Salsa de tomate, mozzarella, jamón dulce y olivas negras',
+      ca: 'Salsa de tomàquet, mozzarella, pernil dolç i olives negres',
+    },
+    priceCents: 1150,
+    allergens: {
+      es: ['Gluten', 'Lácteos'],
+      ca: ['Gluten', 'Làctics'],
+    },
+    vegetarian: false,
+    image: '/images/menu/pizza-prosciutto-olivas.webp',
+    pizza3d: {
+      slug: 'prosciutto-olivas',
+      image3d: '/images/pizzas-3d/pizza-prosciutto-olivas.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-prosciutto-olivas.webp',
+      sauceType: 'tomato',
+      calloutTopLeft: {
+        title: { es: 'Jamón y Olivas negras', ca: 'Pernil i Olives negres' },
+        subtitle: { es: 'Contraste mediterráneo', ca: 'Contrast mediterrani' },
+        detail: { es: 'Jamón dulce tierno con olivas negras', ca: 'Pernil dolç tendre amb olives negres' },
+      },
+      calloutBottomLeft: {
+        title: { es: 'Mozzarella fundida', ca: 'Mozzarella fosa' },
+        subtitle: { es: 'Salsa de tomate', ca: 'Salsa de tomàquet' },
+        detail: { es: 'Gratinado artesanal al momento', ca: 'Gratinat artesanal al moment' },
+      },
+      calloutTopRight: {
+        title: { es: 'Masa 48 h', ca: 'Massa 48 h' },
+        subtitle: { es: 'Fermentación lenta', ca: 'Fermentació lenta' },
+        detail: { es: 'Borde aireado y base fina crujiente', ca: 'Vora airejada i base fina cruixent' },
+      },
+    },
+    placeholder: false,
   },
 
   // ─── PIZZETAS Y PACKS ─────────────────────────────────────────────────────
@@ -385,9 +720,8 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: true,
-    image: '/images/real/pizza-pepperoni-box.webp',
-    placeholder: true,
-    placeholderNote: 'TODO: supply dedicated Pizzeta Margarita photo',
+    image: '/images/menu/pizza-margarita.webp',
+    placeholder: false,
   },
   {
     id: 'pizzeta-pepperoni',
@@ -403,7 +737,7 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
+    image: '/images/menu/pizza-pepperoni.webp',
     placeholder: false,
   },
   {
@@ -423,7 +757,7 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: false,
-    image: '/images/real/pizza-pepperoni-box.webp',
+    image: '/images/menu/action-box-stamp.webp',
     placeholder: false,
   },
 
@@ -450,7 +784,6 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Ou'],
     },
     vegetarian: false,
-    featured: true,
     image: '/images/real/storefront-close.webp',
     placeholder: true,
     placeholderNote: 'TODO: supply close-up photo of Empanada de Carne cortada a cuchillo',
@@ -698,4 +1031,10 @@ export function getMenuItemById(id: string): MenuItem | undefined {
 
 export function getFeaturedMenuItems(): MenuItem[] {
   return menuItems.filter((item) => item.featured);
+}
+
+export function getInteractive3dPizzas(): (MenuItem & { pizza3d: Pizza3dConfig })[] {
+  return menuItems.filter(
+    (item): item is MenuItem & { pizza3d: Pizza3dConfig } => Boolean(item.pizza3d)
+  );
 }

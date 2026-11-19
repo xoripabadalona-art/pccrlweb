@@ -4,29 +4,25 @@ import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { site } from '@/data/site';
 import { getCopy, type Locale } from '@/data/copy';
-import { useBasketStore } from '@/store/basket';
-import { Button, getButtonClasses } from '@/components/ui/Button';
 
 export interface HeroStoryProps {
   locale: Locale;
 }
 
-// Tiny warm dusk SVG blur data URL for zero-CLS blurred placeholder
 const HERO_BLUR_DATA_URL =
-  'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSI5Ij48cmVjdCB3aWR0aD0iMTYiIGhlaWdodD0iOSIgZmlsbD0iIzFS MThBMyIvPjxyZWN0IHk9IjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSI1IiBmaWxsPSIjMTQxMTBGIi8+PC9zdmc+';
+  'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSI5Ij48cmVjdCB3aWR0aD0iMTYiIGhlaWdodD0iOSIgZmlsbD0iIzFGMThBMyIvPjxyZWN0IHk9IjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSI1IiBmaWxsPSIjMTQxMTBGIi8+PC9zdmc+';
 
 export function HeroStory({ locale }: HeroStoryProps) {
   const copy = getCopy(locale);
-  const openDrawer = useBasketStore((s) => s.openDrawer);
 
   const sectionRef = useRef<HTMLElement>(null);
   const pinViewportRef = useRef<HTMLDivElement>(null);
   const interiorLayerRef = useRef<HTMLDivElement>(null);
-  const storefrontSignRef = useRef<HTMLDivElement>(null);
+  const storefrontLayerRef = useRef<HTMLDivElement>(null);
 
   const [progress, setProgress] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [manualSlide, setManualSlide] = useState<0 | 1>(0);
+  const [manualSlide, setManualSlide] = useState<0 | 1 | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -56,16 +52,29 @@ export function HeroStory({ locale }: HeroStoryProps) {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top top',
-            end: '+=120%',
+            end: '+=95%',
             pin: pinViewportRef.current,
-            scrub: 0.6,
+            scrub: 0.5,
             onUpdate: (self) => {
+              setManualSlide(null);
               setProgress(self.progress);
             },
           },
         });
 
-        // Cross-fade storefront -> interior with scale 1.08 -> 1
+        // Slight zoom into the storefront door as interior cross-fades in (like video frame_001 -> frame_003)
+        if (storefrontLayerRef.current) {
+          tl.to(
+            storefrontLayerRef.current,
+            {
+              scale: 1.06,
+              ease: 'power1.inOut',
+              duration: 1,
+            },
+            0
+          );
+        }
+
         tl.to(
           interiorLayerRef.current,
           {
@@ -76,19 +85,6 @@ export function HeroStory({ locale }: HeroStoryProps) {
           },
           0
         );
-
-        if (storefrontSignRef.current) {
-          tl.to(
-            storefrontSignRef.current,
-            {
-              opacity: 0,
-              scale: 0.94,
-              ease: 'power2.out',
-              duration: 0.55,
-            },
-            0
-          );
-        }
       }, sectionRef);
     })();
 
@@ -98,7 +94,8 @@ export function HeroStory({ locale }: HeroStoryProps) {
     };
   }, []);
 
-  const activeSlide = reducedMotion ? manualSlide : progress > 0.48 ? 1 : 0;
+  const activeSlide =
+    manualSlide !== null ? manualSlide : progress > 0.45 ? 1 : 0;
 
   return (
     <section
@@ -108,12 +105,18 @@ export function HeroStory({ locale }: HeroStoryProps) {
       aria-label={copy.heroStory.h1}
       className="relative w-full bg-[#14110F] text-[#F9F4EC]"
     >
+      {/* Server-rendered H1 for SEO and screen readers while keeping the 3D storefront artwork unobstructed like the reference video */}
+      <h1 className="sr-only">{copy.heroStory.h1}</h1>
+
       <div
         ref={pinViewportRef}
-        className="relative flex min-h-screen w-full flex-col justify-between overflow-hidden"
+        className="relative h-[68vh] min-h-[440px] max-h-[760px] w-full overflow-hidden sm:h-[74vh] md:h-[80vh]"
       >
-        {/* Layer 1: Storefront at dusk (LCP priority image) */}
-        <div className="absolute inset-0 z-0">
+        {/* Slide 1: 3D Storefront of La Piccerella at dusk (with glowing LA PICCERELLA neon sign, oven window, OPEN neon & checkered interior) */}
+        <div
+          ref={storefrontLayerRef}
+          className="absolute inset-0 z-0 will-change-transform"
+        >
           <Image
             src="/images/hero-storefront.webp"
             alt={`${site.name} — ${copy.heroStory.slide1Label}`}
@@ -126,38 +129,25 @@ export function HeroStory({ locale }: HeroStoryProps) {
             sizes="100vw"
             className="h-full w-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#14110F] via-[#14110F]/45 to-[#14110F]/65" />
-
-          {/* HTML Real Logo & Glowing Neon-style Sign Overlay on the Storefront's blank signboard */}
-          <div
-            ref={storefrontSignRef}
-            aria-hidden="true"
-            className="pointer-events-none absolute top-22 left-1/2 hidden -translate-x-1/2 items-center gap-3 rounded-2xl border border-[#EE6A2B]/45 bg-[#14110F]/85 px-6 py-2.5 shadow-[0_0_32px_rgba(238,106,43,0.45)] backdrop-blur-xs md:flex"
-          >
-            <img
-              src={site.logo}
-              alt=""
-              width={44}
-              height={44}
-              className="h-11 w-11 rounded-full bg-[#F4EBDD] object-contain"
-            />
-            <div className="text-left">
-              <p className="font-serif-heading text-lg font-bold tracking-wider text-[#F9F4EC] drop-shadow-[0_0_10px_rgba(238,106,43,0.8)]">
-                LA PICCERELLA
-              </p>
-              <p className="text-[10px] font-semibold tracking-[0.22em] text-[#EE6A2B] uppercase">
-                Pizzería Artesanal · 48H
-              </p>
-            </div>
-          </div>
+          {/* Subtle top vignette only for navbar legibility — center of facade stays 100% clean */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#14110F]/70 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#14110F]/55 to-transparent" />
         </div>
 
-        {/* Layer 2: Warm Trattoria Interior (cross-fades with scale 1.08 -> 1 on scroll) */}
+        {/* Slide 2: 3D Warm Interior of La Piccerella (cross-fades with scale 1.08 -> 1 on scroll) */}
         <div
           ref={interiorLayerRef}
-          className="absolute inset-0 z-10"
+          className="absolute inset-0 z-10 will-change-transform"
           style={{
-            opacity: reducedMotion ? (manualSlide === 1 ? 1 : 0) : 0,
+            opacity:
+              manualSlide !== null
+                ? manualSlide === 1
+                  ? 1
+                  : 0
+                : reducedMotion
+                  ? 0
+                  : undefined,
+            transition: manualSlide !== null ? 'opacity 0.45s ease' : undefined,
           }}
         >
           <Image
@@ -169,103 +159,47 @@ export function HeroStory({ locale }: HeroStoryProps) {
             sizes="100vw"
             className="h-full w-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#14110F] via-[#14110F]/55 to-[#14110F]/65" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#14110F]/70 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#14110F]/55 to-transparent" />
         </div>
 
-        {/* Foreground Content: Server-rendered H1, value proposition, and primary CTAs */}
-        <div className="relative z-20 mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-4 pt-28 pb-12 text-center md:px-8">
-          <div className="mb-5 inline-flex items-center gap-3 rounded-full border border-[#F9F4EC]/20 bg-[#14110F]/75 px-4 py-2 backdrop-blur-md">
-            <img
-              src={site.logo}
-              alt=""
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full bg-[#F4EBDD] object-contain"
+        {/* Minimal horizontal dash slide indicators at bottom center (matching video frame_001 & frame_003) */}
+        <div
+          className="absolute inset-x-0 bottom-5 z-20 flex items-center justify-center gap-2.5"
+          role="group"
+          aria-label="Escenas de fachada e interior"
+        >
+          <button
+            type="button"
+            onClick={() => setManualSlide(0)}
+            aria-label={copy.heroStory.slide1Label}
+            data-testid="hero-slide-btn-0"
+            className="group py-2 cursor-pointer"
+          >
+            <span
+              className={`block h-1 rounded-full transition-all duration-300 ${
+                activeSlide === 0
+                  ? 'w-9 bg-[#EE6A2B] shadow-[0_0_8px_#EE6A2B]'
+                  : 'w-6 bg-[#F9F4EC]/45 group-hover:bg-[#F9F4EC]/80'
+              }`}
             />
-            <span className="text-xs font-bold tracking-widest text-[#EE6A2B] uppercase">
-              {site.addressStructured.streetAddress} ·{' '}
-              {site.addressStructured.addressLocality}
-            </span>
-          </div>
+          </button>
 
-          <h1
-            className="font-serif-heading max-w-4xl font-bold tracking-tight text-[#F9F4EC] drop-shadow-lg"
-            style={{ fontSize: 'var(--text-display)', lineHeight: 1.08 }}
+          <button
+            type="button"
+            onClick={() => setManualSlide(1)}
+            aria-label={copy.heroStory.slide2Label}
+            data-testid="hero-slide-btn-1"
+            className="group py-2 cursor-pointer"
           >
-            {copy.heroStory.h1}
-          </h1>
-
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-[#F4EBDD] drop-shadow md:text-xl">
-            {copy.heroStory.subtitle}
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <a
-              href="#carta"
-              className={getButtonClasses('secondary', 'lg')}
-              data-testid="hero-cta-menu"
-            >
-              {copy.heroStory.ctaMenu}
-            </a>
-
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={openDrawer}
-              data-testid="hero-cta-whatsapp"
-            >
-              {copy.heroStory.ctaWhatsApp}
-            </Button>
-          </div>
-        </div>
-
-        {/* Bottom slide progress indicators (Hero A Storefront / Hero B Interior) */}
-        <div className="relative z-20 mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-3 px-4 pb-8 sm:flex-row md:px-8">
-          <div
-            className="flex items-center gap-3 rounded-full border border-[#F9F4EC]/15 bg-[#14110F]/75 px-4 py-2 backdrop-blur-md"
-            role="group"
-            aria-label="Escenas de presentación"
-          >
-            <button
-              type="button"
-              onClick={() => setManualSlide(0)}
-              aria-label={copy.heroStory.slide1Label}
-              className="flex items-center gap-2 text-xs font-semibold cursor-pointer"
-            >
-              <span
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  activeSlide === 0 ? 'w-7 bg-[#EE6A2B]' : 'w-2 bg-[#F9F4EC]/40'
-                }`}
-              />
-              <span className={activeSlide === 0 ? 'text-[#F9F4EC]' : 'text-[#CBBBA8]'}>
-                01 · {locale === 'ca' ? 'Façana' : 'Fachada'}
-              </span>
-            </button>
-
-            <span className="text-[#F9F4EC]/30" aria-hidden="true">
-              /
-            </span>
-
-            <button
-              type="button"
-              onClick={() => setManualSlide(1)}
-              aria-label={copy.heroStory.slide2Label}
-              className="flex items-center gap-2 text-xs font-semibold cursor-pointer"
-            >
-              <span
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  activeSlide === 1 ? 'w-7 bg-[#EE6A2B]' : 'w-2 bg-[#F9F4EC]/40'
-                }`}
-              />
-              <span className={activeSlide === 1 ? 'text-[#F9F4EC]' : 'text-[#CBBBA8]'}>
-                02 · {locale === 'ca' ? 'Interior' : 'Interior'}
-              </span>
-            </button>
-          </div>
-
-          <p className="text-xs font-semibold tracking-widest text-[#CBBBA8] uppercase">
-            {copy.heroStory.scrollHint} ↓
-          </p>
+            <span
+              className={`block h-1 rounded-full transition-all duration-300 ${
+                activeSlide === 1
+                  ? 'w-9 bg-[#EE6A2B] shadow-[0_0_8px_#EE6A2B]'
+                  : 'w-6 bg-[#F9F4EC]/45 group-hover:bg-[#F9F4EC]/80'
+              }`}
+            />
+          </button>
         </div>
       </div>
     </section>
