@@ -4,7 +4,6 @@ import { getCopy, isValidLocale, locales, type Locale } from '@/data/copy';
 import { site } from '@/data/site';
 import { Navbar } from '@/components/ui/Navbar';
 import { ScrollProgressDots } from '@/components/ui/ScrollProgressDots';
-import { HeroStory } from '@/components/sections/HeroStory';
 import { IntroCream } from '@/components/sections/IntroCream';
 import { ExplodedPizza } from '@/components/sections/ExplodedPizza';
 import { Menu } from '@/components/sections/Menu';
@@ -95,9 +94,8 @@ export default async function LocaleHomePage({
       <ScrollProgressDots />
 
       <main id="main-content" className="flex-1">
-        <HeroStory locale={locale} />
-        <IntroCream locale={locale} />
         <ExplodedPizza locale={locale} />
+        <IntroCream locale={locale} />
         <Menu locale={locale} />
         <Story locale={locale} />
         <Reviews locale={locale} />

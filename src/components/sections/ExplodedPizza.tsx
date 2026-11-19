@@ -5,6 +5,11 @@ import { getMenuItemById } from '@/data/menu';
 import { getCopy, type Locale } from '@/data/copy';
 import { formatCents } from '@/lib/format';
 import { useBasketStore } from '@/store/basket';
+import {
+  PEPPERONI_ATLAS,
+  PEPPERONI_FRAME,
+  PEPPERONI_SPRITES,
+} from '@/data/pepperoniSprites';
 
 export interface ExplodedPizzaProps {
   locale: Locale;
@@ -28,6 +33,12 @@ interface LayerSpec {
   /** Parallax depth factor (1 = closest to the camera) */
   depth: number;
   bobDelay: string;
+  /**
+   * Turntable spin for flat layers. The render is a disc seen at an angle, so
+   * un-squashing it, rotating and squashing it back turns it around its own
+   * vertical axis. `k` is the disc's height/width ratio on screen.
+   */
+  turn?: { k: number; scrollDeg: number; whipDeg: number; idleDeg: number };
 }
 
 // Top → bottom. Only what is actually on a Pepperoni: no basil, no extras.
@@ -51,6 +62,8 @@ const LAYERS: LayerSpec[] = [
     explodeRot: 1.6,
     depth: 0.7,
     bobDelay: '-1.4s',
+    // The melted sheet is irregular: beyond ~40° the trick starts to show
+    turn: { k: 0.48, scrollDeg: -16, whipDeg: -26, idleDeg: 4 },
   },
   {
     id: 'sauce',
@@ -61,6 +74,7 @@ const LAYERS: LayerSpec[] = [
     explodeRot: -1.2,
     depth: 0.45,
     bobDelay: '-2.8s',
+    turn: { k: 0.42, scrollDeg: 46, whipDeg: 84, idleDeg: 7 },
   },
   {
     id: 'crust',
@@ -72,6 +86,66 @@ const LAYERS: LayerSpec[] = [
     depth: 0.25,
     bobDelay: '-4.2s',
   },
+];
+
+/** Centre and squash of the pizza plane inside the 16:10 layer frame */
+const PLANE = { cx: 0.5, cy: 0.506, k: 0.42 };
+
+/** Deterministic pseudo-random in [0, 1) so server and client agree */
+function seeded(i: number, salt: number) {
+  const v = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
+  return v - Math.floor(v);
+}
+
+/** Phones pull the layers further apart; the value lives in CSS as --spread */
+function spreadOf(el: HTMLElement | null) {
+  if (!el) return 1;
+  return parseFloat(getComputedStyle(el).getPropertyValue('--spread')) || 1;
+}
+
+/** Per-slice motion for the pepperoni cloud */
+const SLICES = PEPPERONI_SPRITES.map((sprite, i) => ({
+  sprite,
+  // plane coordinates of the slice centre (frame px), un-squashed
+  px: sprite.x + sprite.w / 2 - PLANE.cx * PEPPERONI_FRAME.w,
+  pz: (sprite.y + sprite.h / 2 - PLANE.cy * PEPPERONI_FRAME.h) / PLANE.k,
+  // how far it lifts off the plane when exploded (fraction of frame height)
+  lift: (seeded(i, 1) - 0.42) * 0.46,
+  burst: 0.06 + seeded(i, 2) * 0.2,
+  bobAmp: 3 + seeded(i, 3) * 5,
+  bobSpeed: 0.7 + seeded(i, 4) * 0.9,
+  phase: seeded(i, 5) * Math.PI * 2,
+  tumble: 5 + seeded(i, 6) * 13,
+}));
+
+// ── The lifted slice (opening pose), in % of the baked-pizza frame ──
+// A wedge on the far-right side: its three outer points sit beyond the rim, so
+// the image's own transparency trims the crust edge.
+const WEDGE = 'polygon(50.1% 48%, 97.4% 40.4%, 88.2% 32.3%, 73.4% 26.4%)';
+// Same wedge with its far edge dropped by the dough's thickness: painting the
+// dark gap with this leaves a strip of crumb showing along the far cut face.
+const WEDGE_FLOOR = 'polygon(50.1% 49.5%, 97.4% 40.4%, 88.2% 32.3%, 73.4% 27.9%)';
+const SLICE_RISE = 19; // % of frame height
+/** Melted-cheese strings: [x %, y % of their foot on the pizza, width %] */
+const STRANDS: [number, number, number][] = [
+  [52.9, 46.8, 2.6],
+  [57.4, 46.2, 1.7],
+  [62.3, 45.5, 3.0],
+  [67.6, 44.7, 1.9],
+  [72.6, 43.8, 2.5],
+  [54.4, 44.2, 1.8],
+  [57.3, 41.2, 2.8],
+  [60.2, 38.2, 1.7],
+  [63.0, 35.2, 2.3],
+];
+
+/** Steam wisps rising behind the pizza: [left %, width %, duration s, delay s, drift %, peak opacity] */
+const WISPS: [number, number, number, number, number, number][] = [
+  [14, 30, 8.5, 0, -10, 0.5],
+  [32, 34, 10, -3.6, 8, 0.6],
+  [50, 30, 9, -6.2, -7, 0.55],
+  [62, 28, 8, -1.8, 11, 0.45],
+  [40, 24, 11, -8.4, 4, 0.4],
 ];
 
 export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
@@ -91,6 +165,10 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
   const stampRef = useRef<HTMLDivElement>(null);
   const outroRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
+  const hintRef = useRef<HTMLDivElement>(null);
+  const buildRef = useRef<HTMLDivElement>(null);
+  const steamRef = useRef<HTMLDivElement>(null);
+  const cloudRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -100,7 +178,16 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
 
     let ctx: { revert: () => void } | undefined;
     let removePointer: (() => void) | undefined;
+    let buildTl:
+      | { isActive: () => boolean; progress: (v: number) => unknown; kill: () => void }
+      | undefined;
+    let liftTl: { pause: () => unknown; resume: () => unknown; kill: () => void } | undefined;
+    let stopTicker: (() => void) | undefined;
+    let visibility: IntersectionObserver | undefined;
     let isMounted = true;
+
+    // Scroll writes these; the ticker below turns them into slice positions and spins
+    const motion = { explode: 0, spin: 0, turn: 0, whip: 0 };
 
     (async () => {
       const gsapModule = await import('gsap');
@@ -118,14 +205,11 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
         );
         const calloutEls = q('[data-callout]') as HTMLElement[];
         // Tall (phone) viewports have room to pull the layers further apart.
-        const spread =
-          parseFloat(
-            getComputedStyle(stackRef.current!).getPropertyValue('--spread')
-          ) || 1;
+        const spread = spreadOf(stackRef.current);
 
         // ── Opening pose: one whole pizza, tilted, hovering under the headline
         gsap.set(stackRef.current, {
-          y: () => window.innerHeight * 0.17,
+          y: () => window.innerHeight * 0.2,
           scale: 1.42,
           rotation: -7,
         });
@@ -140,89 +224,291 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top top',
-            end: '+=230%',
+            end: '+=250%',
             pin: pinRef.current,
             scrub: 0.6,
             invalidateOnRefresh: true,
+            // Scrolling during the opening animation: skip straight to the baked pizza
+            onUpdate: (st) => {
+              if (st.progress > 0.015 && buildTl?.isActive()) buildTl.progress(1);
+            },
           },
         });
 
         tl.to(progressRef.current, { scaleY: 1, duration: 1 }, 0);
+        tl.to(hintRef.current, { autoAlpha: 0, duration: 0.05 }, 0.01);
 
-        // 0 → 0.2: headline leaves, the pizza levels out and takes centre stage
-        tl.to(introRef.current, { autoAlpha: 0, y: -36, duration: 0.1 }, 0.02);
-        tl.to(
-          stackRef.current,
-          { y: 0, scale: 1, rotation: 0, ease: 'power2.inOut', duration: 0.2 },
+        // 0 → 0.07: the lifted slice settles back into the pizza
+        const baked = q('[data-baked]')[0] as HTMLElement;
+        tl.fromTo(
+          baked,
+          { '--lift-s': 1 },
+          { '--lift-s': 0, ease: 'power1.inOut', duration: 0.07 },
           0
         );
 
-        // 0.14 → 0.2: swap the baked pizza for its separate layers (still stacked)
-        tl.to(layerEls, { opacity: 1, duration: 0.04 }, 0.14);
-        tl.to(assembledRef.current, { opacity: 0, duration: 0.06 }, 0.16);
+        // 0 → 0.16: headline leaves, the pizza levels out and takes centre stage
+        tl.to(introRef.current, { autoAlpha: 0, y: -36, duration: 0.1 }, 0.02);
+        tl.to(
+          stackRef.current,
+          { y: 0, scale: 1, rotation: 0, ease: 'power2.inOut', duration: 0.16 },
+          0
+        );
 
-        // 0.17 → 0.56: the layers lift apart, top first
+        // 0.125 → 0.175: swap the baked pizza for its separate layers (still stacked)
+        tl.to(layerEls, { opacity: 1, duration: 0.03 }, 0.125);
+        tl.to(assembledRef.current, { opacity: 0, duration: 0.04 }, 0.135);
+
+        // 0.15 → 0.35: the burst. Almost all the travel happens in the first
+        // few percent of scroll, so it reads as a pop rather than a slow lift.
+        const BURST = 0.15;
         LAYERS.forEach((layer, i) => {
           tl.to(
             layerEls[i]!,
             {
               yPercent: layer.explodeY * spread,
               rotation: layer.explodeRot,
-              ease: 'power3.out',
-              duration: 0.36,
+              ease: 'expo.out',
+              duration: 0.2,
             },
-            0.17 + i * 0.012
+            BURST + i * 0.006
           );
         });
+        tl.to(motion, { explode: 1, ease: 'expo.out', duration: 0.2 }, BURST);
+        tl.to(motion, { spin: 1.15, turn: 0.6, ease: 'power2.out', duration: 0.22 }, BURST);
         tl.to(
           shadowRef.current,
-          { yPercent: 150 * spread, scaleX: 0.82, opacity: 0.55, ease: 'power3.out', duration: 0.36 },
-          0.17
+          { yPercent: 150 * spread, scaleX: 0.82, opacity: 0.55, ease: 'expo.out', duration: 0.2 },
+          BURST
         );
+        tl.to(steamRef.current, { opacity: 0.5, duration: 0.1 }, BURST);
 
-        // 0.36 → 0.62: annotations draw in one by one
+        // 0.3 → 0.52: annotations draw in one by one
         calloutEls.forEach((el, i) => {
           const fromLeft = el.dataset.callout === 'left';
           const line = el.querySelector('[data-callout-line]');
           tl.fromTo(
             el,
             { autoAlpha: 0, x: fromLeft ? -26 : 26 },
-            { autoAlpha: 1, x: 0, ease: 'power2.out', duration: 0.09 },
-            0.36 + i * 0.055
+            { autoAlpha: 1, x: 0, ease: 'power2.out', duration: 0.07 },
+            0.3 + i * 0.05
           );
           if (line) {
             tl.fromTo(
               line,
               { scaleX: 0 },
-              { scaleX: 1, ease: 'power2.out', duration: 0.09 },
-              0.39 + i * 0.055
+              { scaleX: 1, ease: 'power2.out', duration: 0.07 },
+              0.32 + i * 0.05
             );
           }
         });
         tl.to(
           stampRef.current,
-          { autoAlpha: 1, scale: 1, ease: 'back.out(1.6)', duration: 0.08 },
-          0.56
+          { autoAlpha: 1, scale: 1, ease: 'back.out(1.6)', duration: 0.06 },
+          0.5
         );
 
-        // 0.8 → 1: everything eases up to make room for the order call-to-action
+        // 0.37 → 0.64: everything keeps turning slowly while it hangs there
+        tl.to(motion, { spin: 1.7, turn: 1, ease: 'none', duration: 0.27 }, 0.37);
+
+        // 0.64 → 0.78: the stack squeezes together, whips round and springs back open
+        const annotations = [...calloutEls, stampRef.current];
+        tl.to(annotations, { autoAlpha: 0, duration: 0.025 }, 0.635);
+        LAYERS.forEach((layer, i) => {
+          tl.to(
+            layerEls[i]!,
+            { yPercent: layer.explodeY * spread * 0.4, ease: 'power2.in', duration: 0.06 },
+            0.64
+          );
+          tl.to(
+            layerEls[i]!,
+            { yPercent: layer.explodeY * spread, ease: 'back.out(1.8)', duration: 0.08 },
+            0.7
+          );
+        });
+        tl.to(motion, { explode: 0.4, ease: 'power2.in', duration: 0.06 }, 0.64);
+        tl.to(motion, { explode: 1, ease: 'back.out(1.8)', duration: 0.08 }, 0.7);
+        tl.to(
+          motion,
+          { spin: 1.7 + Math.PI, whip: 1, ease: 'power2.inOut', duration: 0.14 },
+          0.64
+        );
+        tl.to(annotations, { autoAlpha: 1, duration: 0.04 }, 0.775);
+
+        // 0.82 → 1: everything eases up to make room for the order call-to-action
         tl.to(
           stackRef.current,
           {
             y: () => -window.innerHeight * 0.075,
             scale: 0.9,
             ease: 'power2.inOut',
-            duration: 0.14,
+            duration: 0.12,
           },
-          0.8
+          0.82
         );
         tl.to(
           outroRef.current,
-          { autoAlpha: 1, y: 0, ease: 'power2.out', duration: 0.12 },
-          0.84
+          { autoAlpha: 1, y: 0, ease: 'power2.out', duration: 0.1 },
+          0.86
         );
         tl.to({}, { duration: 0.04 }, 0.96);
       }, sectionRef);
+
+      // ── Per-frame motion: pepperoni cloud + turntable layers ──
+      const cloud = cloudRef.current;
+      const sliceEls = cloud
+        ? Array.from(cloud.querySelectorAll<HTMLElement>('[data-slice]'))
+        : [];
+      const turners = LAYERS.filter((l) => l.turn).map((l) => ({
+        cfg: l.turn!,
+        set: gsap.quickSetter(
+          pinRef.current!.querySelector(`[data-turn="${l.id}"]`),
+          'rotation',
+          'deg'
+        ) as (v: number) => void,
+      }));
+      const lastZ: number[] = [];
+      const t0 = performance.now();
+      let frameSpread = spreadOf(stackRef.current);
+      const onResize = () => {
+        frameSpread = spreadOf(stackRef.current);
+      };
+      window.addEventListener('resize', onResize, { passive: true });
+
+      const frame = () => {
+        const t = (performance.now() - t0) / 1000;
+        turners.forEach(({ cfg, set }, i) => {
+          set(
+            motion.turn * cfg.scrollDeg +
+              motion.whip * cfg.whipDeg +
+              Math.sin(t * 0.45 + i * 2.1) * cfg.idleDeg
+          );
+        });
+
+        if (!cloud || sliceEls.length === 0) return;
+        const scale = cloud.clientWidth / PEPPERONI_FRAME.w;
+        if (!scale) return;
+        const spread = frameSpread;
+        const angle = motion.spin + t * 0.07;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const e = motion.explode;
+        for (let i = 0; i < sliceEls.length; i++) {
+          const s = SLICES[i]!;
+          const reach = 1 + e * s.burst;
+          const x = (s.px * cos - s.pz * sin) * reach;
+          const z = (s.px * sin + s.pz * cos) * reach;
+          const bob = Math.sin(t * s.bobSpeed + s.phase);
+          const dx = (x - s.px) * scale;
+          const dy =
+            ((z - s.pz) * PLANE.k - e * s.lift * PEPPERONI_FRAME.h * spread) * scale +
+            e * bob * s.bobAmp;
+          const roll = e * Math.sin(t * s.bobSpeed * 0.8 + s.phase * 1.7) * s.tumble;
+          const el = sliceEls[i]!;
+          el.style.transform = `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0) rotate(${roll.toFixed(1)}deg)`;
+          // nearer slices paint over farther ones
+          const zi = 200 + Math.round(z / 6);
+          if (lastZ[i] !== zi) {
+            lastZ[i] = zi;
+            el.style.zIndex = String(zi);
+          }
+        }
+      };
+      frame();
+
+      // Run only while the hero is on screen; idle CSS loops pause with it
+      let ticking = false;
+      const setActive = (active: boolean) => {
+        sectionRef.current?.setAttribute('data-idle', active ? 'running' : 'paused');
+        if (active && !ticking) gsap.ticker.add(frame);
+        if (!active && ticking) gsap.ticker.remove(frame);
+        ticking = active;
+        if (active) liftTl?.resume();
+        else liftTl?.pause();
+      };
+      stopTicker = () => {
+        setActive(false);
+        window.removeEventListener('resize', onResize);
+      };
+      visibility = new IntersectionObserver(
+        ([entry]) => setActive(Boolean(entry?.isIntersecting)),
+        { threshold: 0.01 }
+      );
+      visibility.observe(pinRef.current);
+
+      // ── Opening: the pizza builds itself once its images are decoded ──
+      const buildWrap = buildRef.current;
+      const baked = pinRef.current.querySelector<HTMLElement>('[data-baked]');
+      if (buildWrap && baked) {
+        const imgs = Array.from(buildWrap.querySelectorAll('img'));
+        await Promise.race([
+          Promise.all(imgs.map((img) => img.decode().catch(() => undefined))),
+          new Promise((resolve) => window.setTimeout(resolve, 2500)),
+        ]);
+        if (!isMounted) return;
+
+        baked.classList.remove('hero-pizza-wait');
+        // After the build: a slice lifts with its cheese strings and hovers
+        const lift = gsap.timeline({ paused: true });
+        lift
+          .to(baked, { '--lift-a': 1, duration: 1.0, ease: 'back.out(1.5)' })
+          .to(baked, {
+            '--lift-a': 0.84,
+            duration: 2.6,
+            ease: 'sine.inOut',
+            yoyo: true,
+            repeat: -1,
+          });
+        liftTl = lift;
+
+        if (window.scrollY > 40) {
+          // Page opened already scrolled (reload, anchor): no theatrics
+          gsap.set(baked, { autoAlpha: 1 });
+          lift.play();
+        } else {
+          const part = (id: LayerId) =>
+            buildWrap.querySelector<HTMLElement>(`[data-build="${id}"]`);
+          gsap.set(baked, { autoAlpha: 0 });
+          gsap.set(buildWrap, { display: 'block', autoAlpha: 1 });
+
+          const build = gsap.timeline({
+            delay: 0.1,
+            onComplete: () => {
+              gsap.set(buildWrap, { display: 'none' });
+              lift.play();
+            },
+          });
+          build
+            .fromTo(
+              part('crust'),
+              { yPercent: -210, rotation: -16, autoAlpha: 0 },
+              { yPercent: 3, rotation: 0, autoAlpha: 1, duration: 0.75, ease: 'bounce.out' },
+              0
+            )
+            .fromTo(
+              part('sauce'),
+              { scale: 0.12, yPercent: 1, autoAlpha: 0 },
+              { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'power2.out' },
+              0.5
+            )
+            .fromTo(
+              part('cheese'),
+              { yPercent: -180, autoAlpha: 0 },
+              { yPercent: -1, autoAlpha: 1, duration: 0.5, ease: 'power2.in' },
+              0.8
+            )
+            .fromTo(
+              part('toppings'),
+              { yPercent: -220, rotation: 10, autoAlpha: 0 },
+              { yPercent: -3, rotation: 0, autoAlpha: 1, duration: 0.7, ease: 'bounce.out' },
+              1.15
+            )
+            // Out of the oven: cross-fade to the baked pizza
+            .to(baked, { autoAlpha: 1, duration: 0.35, ease: 'power1.inOut' }, 1.95)
+            .to(buildWrap, { autoAlpha: 0, duration: 0.35, ease: 'power1.inOut' }, 1.95);
+          buildTl = build;
+        }
+      }
 
       // Pointer parallax: nearer layers travel further, which sells the depth.
       if (window.matchMedia('(pointer: fine)').matches && pinRef.current) {
@@ -252,6 +538,10 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
     return () => {
       isMounted = false;
       removePointer?.();
+      visibility?.disconnect();
+      stopTicker?.();
+      buildTl?.kill();
+      liftTl?.kill();
       ctx?.revert();
     };
   }, []);
@@ -323,7 +613,7 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
         id="exploded-pizza"
         data-theme="dark"
         aria-labelledby="exploded-pizza-heading"
-        className="relative bg-[#14110F] px-4 py-20 text-[#F9F4EC] md:px-8"
+        className="relative bg-[#14110F] px-4 pt-32 pb-20 text-[#F9F4EC] md:px-8"
       >
         <div
           data-testid="exploded-pizza-reduced-motion"
@@ -333,21 +623,27 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
             <p className="mb-2 text-xs font-bold tracking-widest text-[#F1B24A] uppercase">
               {copy.signatureHero.eyebrow}
             </p>
-            <h2
+            <h1
               id="exploded-pizza-heading"
               className="font-serif-heading text-3xl font-extrabold md:text-4xl"
             >
-              {copy.signatureHero.heading}
-            </h2>
-            <p className="mt-2 text-sm text-[#CBBBA8]">
-              {pizzaLabel} · {price} — {pizza.ingredients[locale]}
+              {copy.heroStory.h1}
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-[#CBBBA8]">
+              {copy.heroStory.subtitle}
             </p>
+            <a
+              href="#carta"
+              className="btn-pill mt-5 inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#F1B24A] px-8 py-2.5 text-sm font-extrabold text-[#14110F]"
+            >
+              {copy.heroStory.ctaMenu}
+            </a>
             <img
               src={assembledImage}
               alt={`${pizzaLabel} — ${pizza.ingredients[locale]}`}
               width={1280}
               height={800}
-              loading="lazy"
+              fetchPriority="high"
               className="mx-auto mt-6 aspect-[16/10] w-full max-w-[460px] object-contain"
             />
           </div>
@@ -393,42 +689,11 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
         ref={pinRef}
         className="relative h-[100svh] min-h-[560px] w-full overflow-hidden bg-[radial-gradient(ellipse_at_50%_42%,#30231A_0%,#1A1512_46%,#0F0D0B_100%)]"
       >
-        {/* Warm spotlight + steam, behind everything */}
+        {/* Warm spotlight behind everything */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute top-1/2 left-1/2 h-[70svh] w-[min(820px,110vw)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(241,178,74,0.13)_0%,rgba(238,106,43,0.05)_45%,transparent_70%)]"
         />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 flex items-center justify-center"
-        >
-          <svg
-            viewBox="0 0 600 600"
-            fill="none"
-            className="animate-steam-drift h-[78svh] w-[78svh] opacity-25 blur-2xl"
-          >
-            <path
-              d="M210 520 C150 410, 270 300, 195 180 C140 95, 235 45, 210 0"
-              stroke="url(#explodedSteam)"
-              strokeWidth="46"
-              strokeLinecap="round"
-            />
-            <path
-              d="M380 530 C450 415, 320 290, 400 175 C450 95, 355 40, 390 0"
-              stroke="url(#explodedSteam)"
-              strokeWidth="38"
-              strokeLinecap="round"
-            />
-            <defs>
-              <linearGradient id="explodedSteam" x1="0" y1="1" x2="0" y2="0">
-                <stop offset="0%" stopColor="#F9F4EC" stopOpacity="0" />
-                <stop offset="45%" stopColor="#F9F4EC" stopOpacity="0.5" />
-                <stop offset="100%" stopColor="#F9F4EC" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-
         {/* Scroll progress rail */}
         <div
           aria-hidden="true"
@@ -448,24 +713,57 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
           <p className="mb-2 text-[11px] font-bold tracking-[0.2em] text-[#F1B24A] uppercase sm:text-xs">
             {copy.signatureHero.eyebrow}
           </p>
-          <h2
+          <h1
             id="exploded-pizza-heading"
-            className="font-serif-heading text-[1.7rem] leading-tight font-extrabold tracking-tight text-[#F9F4EC] sm:text-4xl md:text-[2.75rem]"
+            className="font-serif-heading text-[1.75rem] leading-[1.1] font-extrabold tracking-tight text-balance text-[#F9F4EC] sm:text-4xl md:text-[2.9rem]"
           >
-            {copy.signatureHero.heading}
-          </h2>
-          <p className="mx-auto mt-2.5 max-w-md text-sm leading-relaxed text-[#CBBBA8]">
-            {pizzaLabel} · {price}
-            <span className="hidden sm:inline"> — {pizza.ingredients[locale]}</span>
+            {copy.heroStory.h1}
+          </h1>
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-[#CBBBA8] md:text-base">
+            {copy.heroStory.subtitle}
           </p>
-          <button
-            type="button"
-            onClick={handleOrder}
-            className="btn-pill mt-4 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full bg-[#F1B24A] px-7 py-2.5 text-sm font-extrabold text-[#14110F] shadow-[0_8px_24px_rgba(241,178,74,0.35)] transition-transform hover:scale-105 hover:bg-[#F5C065]"
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="#carta"
+              className="btn-pill inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#F1B24A] px-8 py-2.5 text-sm font-extrabold text-[#14110F] shadow-[0_8px_24px_rgba(241,178,74,0.35)] transition-transform hover:scale-105 hover:bg-[#F5C065]"
+            >
+              {copy.heroStory.ctaMenu}
+            </a>
+            <button
+              type="button"
+              onClick={handleOrder}
+              className="btn-pill hidden min-h-[46px] cursor-pointer items-center gap-2 rounded-full border border-[#F9F4EC]/30 bg-[#14110F]/40 px-6 py-2.5 text-sm font-bold text-[#F9F4EC] backdrop-blur-sm transition-colors hover:border-[#F1B24A] hover:text-[#F1B24A] sm:inline-flex"
+            >
+              <span>
+                {pizzaLabel} · {price}
+              </span>
+              <span aria-hidden="true">›</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Scroll cue */}
+        <div
+          ref={hintRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-5 z-30 hidden flex-col items-center gap-1 text-[#CBBBA8] sm:flex"
+        >
+          <span className="text-[10px] font-bold tracking-[0.24em] uppercase">
+            {locale === 'ca' ? 'Llisca' : 'Desliza'}
+          </span>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="animate-scroll-cue"
           >
-            <span>{copy.signatureHero.ctaOrder}</span>
-            <span aria-hidden="true">›</span>
-          </button>
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
         </div>
 
         {/* The pizza */}
@@ -482,23 +780,175 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
               className="pointer-events-none absolute inset-x-[14%] bottom-[6%] z-0 h-[22%] rounded-[50%] bg-black/85 blur-2xl"
             />
 
+            {/* Steam curling up from behind the pizza */}
+            <div
+              ref={steamRef}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-[42%] z-0 h-[150%]"
+            >
+              {WISPS.map(([left, width, duration, delay, drift, peak], i) => (
+                <svg
+                  key={i}
+                  viewBox="0 0 100 300"
+                  preserveAspectRatio="none"
+                  fill="none"
+                  className="steam-wisp absolute bottom-0 h-full"
+                  style={
+                    {
+                      left: `${left}%`,
+                      width: `${width}%`,
+                      animationDuration: `${duration}s`,
+                      animationDelay: `${delay}s`,
+                      '--wisp-drift': `${drift}%`,
+                      '--wisp-peak': peak,
+                    } as React.CSSProperties
+                  }
+                >
+                  <path
+                    d={
+                      i % 2
+                        ? 'M52 300 C -10 250, 104 214, 40 168 C -8 132, 96 104, 60 62 C 34 34, 70 16, 44 0'
+                        : 'M48 300 C 112 252, -6 212, 62 166 C 110 130, 2 100, 42 60 C 70 32, 28 14, 58 0'
+                    }
+                    stroke="url(#heroSteam)"
+                    strokeWidth="13"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d={
+                      i % 2
+                        ? 'M40 300 C 80 262, 6 222, 58 180 C 96 148, 20 118, 50 84'
+                        : 'M60 300 C 18 260, 96 224, 44 182 C 4 150, 82 120, 52 86'
+                    }
+                    stroke="url(#heroSteam)"
+                    strokeWidth="7"
+                    strokeLinecap="round"
+                    opacity="0.7"
+                  />
+                </svg>
+              ))}
+              <svg width="0" height="0" className="absolute">
+                <defs>
+                  <linearGradient id="heroSteam" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="#F9F4EC" stopOpacity="0" />
+                    <stop offset="35%" stopColor="#F9F4EC" stopOpacity="0.85" />
+                    <stop offset="100%" stopColor="#F9F4EC" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+
             {/* Baked pizza (opening state) */}
             <div
               ref={assembledRef}
               data-layer-id="assembled"
               className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center will-change-[transform,opacity]"
             >
-              <div data-parallax="0.6" className="h-full w-full">
-                <img
-                  src={assembledImage}
-                  alt={`${pizzaLabel} — ${pizza.ingredients[locale]}`}
-                  width={1280}
-                  height={800}
-                  loading="lazy"
-                  decoding="async"
-                  className="pizza-layer-bob h-full w-full object-contain drop-shadow-[0_26px_30px_rgba(0,0,0,0.75)]"
-                />
+              <div
+                data-parallax="0.6"
+                data-baked
+                className="hero-pizza-wait h-full w-full"
+                style={
+                  {
+                    '--lift-a': 0,
+                    '--lift-s': 1,
+                    '--lift': 'calc(var(--lift-a) * var(--lift-s))',
+                  } as React.CSSProperties
+                }
+              >
+                <div className="pizza-layer-bob relative h-full w-full">
+                  <img
+                    src={assembledImage}
+                    alt={`${pizzaLabel} — ${pizza.ingredients[locale]}`}
+                    width={1280}
+                    height={800}
+                    fetchPriority="high"
+                    decoding="async"
+                    className="h-full w-full object-contain drop-shadow-[0_26px_30px_rgba(0,0,0,0.75)]"
+                  />
+
+                  {/* The gap the slice leaves behind (only while it is lifted) */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 bg-[linear-gradient(to_bottom,#c9925a_0%,#b98350_45%,#8c5c31_100%)]"
+                    style={{
+                      clipPath: WEDGE,
+                      WebkitMaskImage: `url(${assembledImage})`,
+                      maskImage: `url(${assembledImage})`,
+                      WebkitMaskSize: '100% 100%',
+                      maskSize: '100% 100%',
+                      opacity: 'clamp(0, calc(var(--lift) * 9), 1)',
+                    }}
+                  >
+                    <div
+                      className="absolute inset-0 bg-[radial-gradient(ellipse_at_62%_40%,#3a1c10_0%,#1c120d_55%,#120d0a_100%)]"
+                      style={{ clipPath: WEDGE_FLOOR }}
+                    />
+                  </div>
+
+                  {/* Melted cheese stretching between the pizza and the slice */}
+                  {STRANDS.map(([x, y, w], i) => (
+                    <span
+                      key={i}
+                      aria-hidden="true"
+                      className="cheese-strand absolute block"
+                      style={{
+                        left: `${x - w / 2}%`,
+                        bottom: `${100 - y}%`,
+                        width: `${w}%`,
+                        height: `${SLICE_RISE}%`,
+                        transform: 'scaleY(var(--lift))',
+                        opacity: 'clamp(0, calc(var(--lift) * 7 - 0.35), 1)',
+                      }}
+                    />
+                  ))}
+
+                  {/* The slice itself: the same render, clipped to the wedge */}
+                  <div
+                    aria-hidden="true"
+                    className="pizza-slice-lifted absolute inset-0"
+                    style={{
+                      // gone the instant it is back in place, so no cut line shows on the whole pizza
+                      opacity: 'clamp(0, calc(var(--lift) * 40), 1)',
+                      transform: `translate3d(0, calc(var(--lift) * -${SLICE_RISE}%), 0)`,
+                    }}
+                  >
+                    <img
+                      src={assembledImage}
+                      alt=""
+                      width={1280}
+                      height={800}
+                      decoding="async"
+                      className="h-full w-full object-contain"
+                      style={{ clipPath: WEDGE }}
+                    />
+                  </div>
+                </div>
               </div>
+            </div>
+
+            {/* Opening animation: ingredients dropping into place, bottom layer first */}
+            <div
+              ref={buildRef}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-[60] hidden"
+            >
+              {[...LAYERS].reverse().map((layer) => (
+                <div
+                  key={layer.id}
+                  data-build={layer.id}
+                  className="invisible absolute inset-0 flex items-center justify-center will-change-transform"
+                >
+                  <img
+                    src={layer.src}
+                    alt=""
+                    width={1280}
+                    height={800}
+                    decoding="async"
+                    className={`${layer.widthClass} aspect-[16/10] object-contain drop-shadow-[0_18px_20px_rgba(0,0,0,0.7)]`}
+                  />
+                </div>
+              ))}
             </div>
 
             {/* Separate ingredient layers */}
@@ -510,18 +960,85 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
               >
                 <div
                   data-parallax={layer.depth}
-                  className={`${layer.widthClass} aspect-[16/10]`}
+                  className={`relative ${layer.widthClass} aspect-[16/10]`}
                 >
-                  <img
-                    src={layer.src}
-                    alt={layerAlt[layer.id]}
-                    width={1280}
-                    height={800}
-                    loading="lazy"
-                    decoding="async"
-                    style={{ animationDelay: layer.bobDelay }}
-                    className="pizza-layer-bob h-full w-full object-contain drop-shadow-[0_18px_20px_rgba(0,0,0,0.7)]"
-                  />
+                  {layer.id === 'toppings' ? (
+                    // Every pepperoni slice is its own sprite, positioned each frame
+                    <div
+                      ref={cloudRef}
+                      role="img"
+                      aria-label={layerAlt[layer.id]}
+                      className="relative h-full w-full"
+                    >
+                      {SLICES.map(({ sprite }, i) => (
+                        <span
+                          key={i}
+                          data-slice
+                          className="absolute block will-change-transform"
+                          style={{
+                            left: `${(sprite.x / PEPPERONI_FRAME.w) * 100}%`,
+                            top: `${(sprite.y / PEPPERONI_FRAME.h) * 100}%`,
+                            width: `${(sprite.w / PEPPERONI_FRAME.w) * 100}%`,
+                            height: `${(sprite.h / PEPPERONI_FRAME.h) * 100}%`,
+                            backgroundImage: `url(${PEPPERONI_ATLAS.src})`,
+                            backgroundRepeat: 'no-repeat',
+                            backgroundSize: `${(PEPPERONI_ATLAS.w / sprite.w) * 100}% ${(PEPPERONI_ATLAS.h / sprite.h) * 100}%`,
+                            backgroundPosition: `${(sprite.ax / Math.max(1, PEPPERONI_ATLAS.w - sprite.w)) * 100}% ${(sprite.ay / Math.max(1, PEPPERONI_ATLAS.h - sprite.h)) * 100}%`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : layer.turn ? (
+                    <div
+                      className="pizza-layer-bob relative h-full w-full"
+                      style={{ animationDelay: layer.bobDelay }}
+                    >
+                      {/* Soft shadow that does not need re-rendering while the disc spins */}
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-x-[20%] top-[58%] h-[22%] rounded-[50%] bg-black/55 blur-xl"
+                      />
+                      {/* squash ∘ rotate ∘ un-squash = turntable spin of a tilted disc */}
+                      <div
+                        className="h-full w-full"
+                        style={{
+                          transform: `scaleY(${layer.turn.k})`,
+                          transformOrigin: `${PLANE.cx * 100}% ${PLANE.cy * 100}%`,
+                        }}
+                      >
+                        <div
+                          data-turn={layer.id}
+                          className="h-full w-full will-change-transform"
+                          style={{
+                            transformOrigin: `${PLANE.cx * 100}% ${PLANE.cy * 100}%`,
+                          }}
+                        >
+                          <img
+                            src={layer.src}
+                            alt={layerAlt[layer.id]}
+                            width={1280}
+                            height={800}
+                            decoding="async"
+                            className="h-full w-full object-contain"
+                            style={{
+                              transform: `scaleY(${1 / layer.turn.k})`,
+                              transformOrigin: `${PLANE.cx * 100}% ${PLANE.cy * 100}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={layer.src}
+                      alt={layerAlt[layer.id]}
+                      width={1280}
+                      height={800}
+                      decoding="async"
+                      style={{ animationDelay: layer.bobDelay }}
+                      className="pizza-layer-bob h-full w-full object-contain drop-shadow-[0_18px_20px_rgba(0,0,0,0.7)]"
+                    />
+                  )}
                 </div>
               </div>
             ))}

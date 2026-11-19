@@ -3,11 +3,10 @@
 import React, { useEffect, useState } from 'react';
 
 const SECTIONS = [
-  { id: 'hero-story', label: 'Inicio' },
+  { id: 'exploded-pizza', label: 'Inicio' },
   { id: 'especialidades', label: 'Especialidades' },
-  { id: 'signature-pizza', label: 'Nuestra Masa' },
-  { id: 'exploded-pizza', label: 'Ingredientes' },
   { id: 'carta', label: 'Carta' },
+  { id: 'historia', label: 'Historia' },
   { id: 'ubicacion', label: 'Ubicación' },
 ];
 
