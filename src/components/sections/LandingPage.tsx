@@ -14,14 +14,17 @@ import {
 } from '@/data/landings';
 import { Navbar } from '@/components/ui/Navbar';
 import { Footer } from '@/components/sections/Footer';
-import { MenuItemCard } from '@/components/sections/Menu';
+import { MenuItemCard, StickerLoyaltyBanner } from '@/components/sections/Menu';
+import { EventCalculator } from '@/components/sections/EventCalculator';
 import { BasketDrawer } from '@/components/basket/BasketDrawer';
 import { FloatingWhatsApp } from '@/components/basket/FloatingWhatsApp';
+import { GoogleMapEmbed } from '@/components/ui/GoogleMapEmbed';
 import { AnalyticsAndConsent } from '@/components/seo/AnalyticsAndConsent';
 import {
   JsonLd,
   buildBreadcrumbJsonLd,
   buildItemListJsonLd,
+  buildLandingFaqJsonLd,
   buildRestaurantJsonLd,
   getGoogleMapsUrl,
 } from '@/components/seo/JsonLd';
@@ -93,11 +96,46 @@ export async function LandingPageView({ params }: { params: Params }) {
   const items = content.itemIds
     .map((itemId) => getMenuItemById(itemId))
     .filter((item): item is MenuItem => Boolean(item));
-  const related = LANDING_IDS.filter((other) => other !== id).map((other) => ({
-    id: other,
-    content: getLanding(other, locale),
-  }));
   const t = (es: string, ca: string) => (locale === 'ca' ? ca : es);
+
+  const eventCards = [
+    {
+      icon: '🎂',
+      tag: t('Sin cortar · Listas para servir', 'Sense tallar · A punt per servir'),
+      title: t('Cumpleaños y Fiestas Infantiles', 'Aniversaris i Festes Infantils'),
+      desc: t(
+        'Pizzetas individuales de 16 cm desde 3 € (Promo 5+1 gratis): cada invitado tiene su propia pizza recién horneada.',
+        'Pizzetes individuals de 16 cm des de 3 € (Promo 5+1 gratis): cada convidat té la seva pròpia pizza acabada de fer.'
+      ),
+    },
+    {
+      icon: '💼',
+      tag: t('Puntualidad garantizada', 'Puntualitat garantida'),
+      title: t('Empresas, Oficinas y Reuniones', 'Empreses, Oficines i Reunions'),
+      desc: t(
+        'Combina Packs de 3 Pizzas Grandes (32 cm) y cajas de pizzetas variadas programadas a la hora exacta de tu evento.',
+        'Combina Packs de 3 Pizzes Grans (32 cm) i caixes de pizzetes variades programades a l’hora exacta del teu esdeveniment.'
+      ),
+    },
+    {
+      icon: '⚽',
+      tag: t('Tarifas por volumen', 'Tarifes per volum'),
+      title: t('Colegios, AFA y Clubs Deportivos', 'Escoles, AFA i Clubs Esportius'),
+      desc: t(
+        'Pedidos grandes por mayoreo para finales de partido, torneos y fiestas escolares en Badalona con presupuesto a medida.',
+        'Comandes grans per a finals de partit, tornejos i festes escolars a Badalona amb pressupost especial a mida.'
+      ),
+    },
+    {
+      icon: '🏖️',
+      tag: t('A 2 min de la playa', 'A 2 min de la platja'),
+      title: t('Planes en la Playa y Amigos', 'Plans a la Platja i Amics'),
+      desc: t(
+        `Recoge tu pedido recién salido del horno en ${site.addressStructured.streetAddress}, entre el centro y el paseo marítimo.`,
+        `Recull la teva comanda acabada de sortir del forn a ${site.addressStructured.streetAddress}, entre el centre i el passeig marítim.`
+      ),
+    },
+  ];
 
   return (
     <>
@@ -110,6 +148,7 @@ export async function LandingPageView({ params }: { params: Params }) {
         ])}
       />
       <JsonLd id="jsonld-items-landing" data={buildItemListJsonLd(locale, url, content.itemIds)} />
+      <JsonLd id="jsonld-faq-landing" data={buildLandingFaqJsonLd(url, content.faqs)} />
 
       <Navbar
         locale={locale}
@@ -117,63 +156,168 @@ export async function LandingPageView({ params }: { params: Params }) {
         alternateHref={getLandingPath(id, otherLocale)}
       />
 
-      <main id="main-content" className="flex-1 bg-[#F4EBDD] pt-24 text-[#1A1512]">
-        <div className="mx-auto max-w-7xl px-4 pt-6 md:px-8">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-4 flex items-center gap-2 text-xs font-semibold text-[#574B42]"
-          >
-            <Link href={`/${locale}`} className="underline hover:text-[#A8241B]">
-              {site.name}
-            </Link>
-            <span aria-hidden="true">/</span>
-            <span aria-current="page" className="text-[#1A1512]">
-              {content.linkLabel}
-            </span>
-          </nav>
-
-          <header className="border-b border-[#1A1512]/15 pb-10">
-            <p className="mb-2 text-xs font-bold tracking-widest text-[#A8241B] uppercase">
-              {content.eyebrow}
-            </p>
-            <h1 className="font-serif-heading max-w-4xl text-3xl leading-tight font-bold text-balance md:text-5xl">
-              {content.h1}
-            </h1>
-            <p className="mt-4 max-w-3xl text-lg leading-relaxed text-[#574B42]">{content.lead}</p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <a
-                href="#productos"
-                className="btn-pill inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#EE6A2B] px-8 py-2.5 text-sm font-extrabold text-[#14110F] transition-transform hover:scale-105 hover:bg-[#F37D44] md:text-base"
-              >
-                {t('Empezar el pedido', 'Començar la comanda')}
-              </a>
-              <Link
-                href={`/${locale}/carta`}
-                className="btn-pill inline-flex min-h-[48px] items-center justify-center rounded-full border border-[#1A1512]/25 bg-[#FAF5ED] px-7 py-2.5 text-sm font-bold text-[#1A1512] hover:bg-[#E5D7C3] md:text-base"
-              >
-                {t('Ver la carta completa', 'Veure la carta completa')}
-              </Link>
-            </div>
-          </header>
-        </div>
-
-        {/* What you can order from this page */}
+      <main id="main-content" className="flex-1 bg-[#F4EBDD] text-[#1A1512]">
+        {/* Dark Visual Hero Split — Zero Wall of Text */}
         <section
-          id="productos"
+          data-theme="dark"
+          className="relative overflow-hidden bg-[radial-gradient(ellipse_at_top_right,#3A2116_0%,#1A130F_55%,#14110F_100%)] pt-28 pb-14 text-[#F9F4EC] md:pt-32 md:pb-20"
+        >
+          <div className="mx-auto max-w-7xl px-4 md:px-8">
+            <nav
+              aria-label="Breadcrumb"
+              className="mb-5 flex items-center gap-2 text-xs font-semibold text-[#CBBBA8]"
+            >
+              <Link href={`/${locale}`} className="underline hover:text-[#F1B24A]">
+                {site.name}
+              </Link>
+              <span aria-hidden="true">/</span>
+              <span aria-current="page" className="text-[#F1B24A]">
+                {content.linkLabel}
+              </span>
+            </nav>
+
+            <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
+              {/* Left Hero Copy & Direct CTAs */}
+              <div className="lg:col-span-7">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#F1B24A]/40 bg-[#F1B24A]/15 px-3.5 py-1 text-xs font-extrabold tracking-wider text-[#F1B24A] uppercase">
+                  ★ {content.eyebrow}
+                </span>
+                <h1 className="font-serif-heading mt-3 text-3xl leading-tight font-extrabold text-balance sm:text-4xl md:text-5xl">
+                  {content.h1}
+                </h1>
+                <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#E5D7C3] md:text-lg">
+                  {content.lead}
+                </p>
+
+                {/* 3 Quick Visual Pill Highlights */}
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-[#1F1813] px-3.5 py-1.5 text-xs font-bold text-[#F1B24A] ring-1 ring-[#F1B24A]/30">
+                    🍕 {t('Pizzetas 16 cm: Paga 5 y llévate 6', 'Pizzetes 16 cm: Paga’n 5 i emporta-te’n 6')}
+                  </span>
+                  <span className="rounded-full bg-[#1F1813] px-3.5 py-1.5 text-xs font-bold text-[#F9F4EC] ring-1 ring-[#F9F4EC]/20">
+                    🎉 {t('Pack 3 Pizzas Grandes: 34,99 €', 'Pack 3 Pizzes Grans: 34,99 €')}
+                  </span>
+                  <span className="rounded-full bg-[#1F1813] px-3.5 py-1.5 text-xs font-bold text-[#EE6A2B] ring-1 ring-[#EE6A2B]/35">
+                    ★ {t('5 Stickers = 1 Pizza Grande Gratis', '5 Stickers = 1 Pizza Gran Gratis')}
+                  </span>
+                </div>
+
+                <div className="mt-7 flex flex-wrap items-center gap-3">
+                  <a
+                    href="#calculadora-evento"
+                    className="btn-pill inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full bg-[#EE6A2B] px-7 py-3 text-sm font-extrabold text-[#14110F] shadow-[0_12px_28px_rgba(238,106,43,0.35)] transition-transform hover:scale-105 hover:bg-[#F37D44] md:text-base"
+                  >
+                    <span>⚡ {t('Calcular mi evento en 30 s', 'Calcular el meu esdeveniment en 30 s')}</span>
+                  </a>
+                  <a
+                    href={`tel:${site.phoneTel}`}
+                    className="btn-pill inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full border border-[#F1B24A]/50 bg-[#1F1813] px-6 py-3 text-sm font-extrabold text-[#F1B24A] hover:bg-[#F1B24A] hover:text-[#14110F] md:text-base"
+                  >
+                    <span>📞 {site.phone}</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Right Visual Showcase Card */}
+              <div className="lg:col-span-5">
+                <div className="relative mx-auto max-w-md overflow-hidden rounded-[28px] border border-[#F1B24A]/35 bg-[radial-gradient(circle_at_50%_40%,#3B261A_0%,#1A130F_70%)] p-5 shadow-2xl">
+                  <div className="relative aspect-[16/10] w-full">
+                    <img
+                      src="/images/menu/pack-3-pizzas.webp"
+                      alt={t(
+                        'Pack Degustación de 3 Pizzas Grandes artesanales para eventos en Badalona',
+                        'Pack Degustació de 3 Pizzes Grans artesanals per a esdeveniments a Badalona'
+                      )}
+                      width={800}
+                      height={500}
+                      className="h-full w-full scale-105 object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.65)]"
+                    />
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-2xl bg-[#14110F]/90 p-2.5 ring-1 ring-[#F9F4EC]/10">
+                      <p className="font-serif-heading text-lg font-extrabold text-[#F1B24A]">3,00 €</p>
+                      <p className="text-[10px] font-bold text-[#CBBBA8] uppercase">
+                        {t('Pizzetas 16 cm', 'Pizzetes 16 cm')}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-[#14110F]/90 p-2.5 ring-1 ring-[#F1B24A]/35">
+                      <p className="font-serif-heading text-lg font-extrabold text-[#EE6A2B]">5+1</p>
+                      <p className="text-[10px] font-bold text-[#CBBBA8] uppercase">
+                        {t('6ª Gratis', '6a Gratis')}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-[#14110F]/90 p-2.5 ring-1 ring-[#F9F4EC]/10">
+                      <p className="font-serif-heading text-lg font-extrabold text-[#F1B24A]">34,99 €</p>
+                      <p className="text-[10px] font-bold text-[#CBBBA8] uppercase">
+                        {t('Pack 3 Grandes', 'Pack 3 Grans')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4 Visual Event Cards Grid */}
+            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {eventCards.map((card) => (
+                <div
+                  key={card.title}
+                  className="flex flex-col justify-between rounded-[22px] border border-[#F9F4EC]/12 bg-[#1F1813]/90 p-5 shadow-md"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-2xl" aria-hidden="true">
+                        {card.icon}
+                      </span>
+                      <span className="rounded-full bg-[#F1B24A]/15 px-2.5 py-0.5 text-[10px] font-extrabold text-[#F1B24A] uppercase">
+                        {card.tag}
+                      </span>
+                    </div>
+                    <h2 className="font-serif-heading mt-3 text-lg font-bold text-[#F9F4EC]">
+                      {card.title}
+                    </h2>
+                    <p className="mt-1.5 text-xs leading-relaxed text-[#CBBBA8]">
+                      {card.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Interactive Calculator & Direct Order Cards */}
+        <section
+          id="calculadora-evento"
           aria-labelledby="landing-items-heading"
           className="mx-auto max-w-7xl scroll-mt-24 px-4 py-12 md:px-8"
         >
-          <h2
-            id="landing-items-heading"
-            className="font-serif-heading mb-6 text-2xl font-bold md:text-3xl"
-          >
-            {content.itemsHeading}
-          </h2>
-          <ul
-            className={`grid grid-cols-1 gap-6 sm:grid-cols-2 ${
-              items.length === 1 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'
-            }`}
-          >
+          <EventCalculator locale={locale} />
+
+          <StickerLoyaltyBanner locale={locale} />
+
+          <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-extrabold tracking-widest text-[#A8241B] uppercase">
+                {t('Añade packs o unidades sueltas', 'Afegeix packs o unitats soltes')}
+              </p>
+              <h2
+                id="landing-items-heading"
+                className="font-serif-heading mt-1 text-2xl font-bold md:text-3xl"
+              >
+                {content.itemsHeading}
+              </h2>
+            </div>
+            <Link
+              href={`/${locale}/carta`}
+              className="text-sm font-extrabold text-[#A8241B] underline underline-offset-4 hover:text-[#1A1512]"
+            >
+              {t('Ver las 34 opciones en La Carta →', 'Veure les 34 opcions a La Carta →')}
+            </Link>
+          </div>
+
+          <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item) => (
               <MenuItemCard key={item.id} item={item} locale={locale} />
             ))}
@@ -181,13 +325,13 @@ export async function LandingPageView({ params }: { params: Params }) {
 
           {content.showPizzaNames && (
             <div className="mt-8 rounded-2xl border border-[#1A1512]/12 bg-[#FAF5ED] p-6">
-              <h3 className="font-serif-heading mb-3 text-xl font-bold">{content.showPizzaNames}</h3>
+              <h3 className="font-serif-heading mb-3 text-lg font-bold">{content.showPizzaNames}</h3>
               <ul className="flex flex-wrap gap-2">
                 {getPizzaNames(locale).map((pizza) => (
                   <li key={pizza.id}>
                     <Link
                       href={`/${locale}/carta#menu-item-${pizza.id}`}
-                      className="inline-flex min-h-[40px] items-center rounded-full bg-[#E5D7C3] px-4 py-1.5 text-sm font-semibold text-[#1A1512] hover:bg-[#D5C3AA]"
+                      className="inline-flex min-h-[38px] items-center rounded-full bg-[#E5D7C3] px-3.5 py-1 text-xs font-bold text-[#1A1512] hover:bg-[#D5C3AA]"
                     >
                       {pizza.name}
                     </Link>
@@ -198,168 +342,74 @@ export async function LandingPageView({ params }: { params: Params }) {
           )}
         </section>
 
-        {/* The detail, in plain words */}
-        <div className="mx-auto max-w-7xl px-4 pb-14 md:px-8">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {content.sections.map((section) => {
-              const ListTag = section.ordered ? 'ol' : 'ul';
-              return (
-                <section
-                  key={section.heading}
-                  className="rounded-[24px] border border-[#1A1512]/10 bg-[#FAF5ED] p-6 md:p-8"
-                >
-                  <h2 className="font-serif-heading mb-3 text-xl font-bold md:text-2xl">
-                    {section.heading}
-                  </h2>
-                  {section.list && (
-                    <ListTag
-                      className={`mb-3 flex flex-col gap-2 pl-5 text-[15px] leading-relaxed text-[#3A312B] marker:font-bold marker:text-[#A8241B] ${
-                        section.ordered ? 'list-decimal' : 'list-disc'
-                      }`}
-                    >
-                      {section.list.map((entry) => (
-                        <li key={entry}>{entry}</li>
-                      ))}
-                    </ListTag>
-                  )}
-                  {section.paragraphs?.map((paragraph) => (
-                    <p
-                      key={paragraph}
-                      className="mb-3 text-[15px] leading-relaxed text-[#3A312B] last:mb-0"
-                    >
-                      {paragraph}
-                    </p>
-                  ))}
-                  {section.link && (
-                    <a
-                      href={section.link.href}
-                      {...(section.link.external
-                        ? { target: '_blank', rel: 'noopener noreferrer' }
-                        : {})}
-                      className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-[#A8241B] underline underline-offset-4 hover:text-[#1A1512]"
-                    >
-                      {section.link.label}
-                      <span aria-hidden="true">↗</span>
-                    </a>
-                  )}
-                </section>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Where, and the questions people ask */}
-        <div className="bg-[#14110F] text-[#F9F4EC]">
-          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 md:grid-cols-2 md:px-8">
-            <section aria-labelledby="landing-where-heading">
-              <h2
-                id="landing-where-heading"
-                className="font-serif-heading mb-4 text-2xl font-bold md:text-3xl"
-              >
-                {t('Dónde recogerlo', 'On recollir-ho')}
+        {/* Compact Collapsible FAQ & Pickup Location Bar */}
+        <section className="bg-[#14110F] py-14 text-[#F9F4EC]">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 md:grid-cols-12 md:px-8">
+            <div className="md:col-span-5">
+              <span className="text-xs font-extrabold tracking-widest text-[#F1B24A] uppercase">
+                {t('Recogida puntual sin esperas', 'Recollida puntual sense esperes')}
+              </span>
+              <h2 className="font-serif-heading mt-1.5 text-2xl font-bold md:text-3xl">
+                {site.name} · Badalona
               </h2>
-              <p className="text-lg font-bold">{site.name}</p>
-              <p className="mt-1 text-[#E5D7C3]">{site.address}</p>
-              <p className="mt-2">
-                <a
-                  href={`tel:${site.phoneTel}`}
-                  className="font-bold underline underline-offset-4 hover:text-[#EE6A2B]"
-                >
-                  {site.phone}
-                </a>
+              <p className="mt-2 text-sm text-[#E5D7C3]">{site.address}</p>
+              <p className="mt-1 text-xs text-[#CBBBA8]">
+                {t(
+                  'A 2 minutos a pie de la Rambla y la Playa de Badalona · Metro L2 Pompeu Fabra',
+                  'A 2 minuts a peu de la Rambla i la Platja de Badalona · Metro L2 Pompeu Fabra'
+                )}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <a
                   href={getGoogleMapsUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-pill inline-flex min-h-[46px] items-center gap-2 rounded-full bg-[#EE6A2B] px-6 py-2.5 text-sm font-extrabold text-[#14110F] hover:bg-[#F37D44]"
+                  className="btn-pill inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#EE6A2B] px-5 py-2 text-xs font-extrabold text-[#14110F] hover:bg-[#F37D44]"
                 >
-                  {t('Cómo llegar', 'Com arribar-hi')}
-                  <span aria-hidden="true">↗</span>
+                  {t('Cómo llegar en Google Maps', 'Com arribar-hi a Google Maps')} ↗
                 </a>
-                <Link
-                  href={`/${locale}#ubicacion`}
-                  className="btn-pill inline-flex min-h-[46px] items-center rounded-full border border-[#F9F4EC]/30 px-6 py-2.5 text-sm font-bold hover:border-[#EE6A2B] hover:text-[#EE6A2B]"
+                <a
+                  href={`tel:${site.phoneTel}`}
+                  className="btn-pill inline-flex min-h-[44px] items-center rounded-full border border-[#F9F4EC]/25 px-5 py-2 text-xs font-bold hover:border-[#F1B24A] hover:text-[#F1B24A]"
                 >
-                  {t('Ver horario', 'Veure horari')}
-                </Link>
+                  📞 {site.phone}
+                </a>
               </div>
-            </section>
+              <GoogleMapEmbed
+                locale={locale}
+                heightClass="h-[220px] md:h-[240px]"
+                className="mt-6"
+              />
+            </div>
 
-            <section aria-labelledby="landing-faq-heading">
-              <h2
-                id="landing-faq-heading"
-                className="font-serif-heading mb-4 text-2xl font-bold md:text-3xl"
-              >
-                {t('Preguntas frecuentes', 'Preguntes freqüents')}
+            <div className="md:col-span-7">
+              <h2 className="font-serif-heading mb-4 text-xl font-bold md:text-2xl">
+                {t('Dudas rápidas sobre pedidos para eventos', 'Dubtes ràpids sobre comandes per a esdeveniments')}
               </h2>
-              <dl className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
                 {content.faqs.map((faq) => (
-                  <div
+                  <details
                     key={faq.question}
-                    className="rounded-2xl border border-[#F9F4EC]/15 bg-[#1F1813] p-5"
+                    className="group rounded-2xl border border-[#F9F4EC]/15 bg-[#1F1813] p-4"
                   >
-                    <dt className="font-serif-heading text-lg font-bold text-[#F9F4EC]">
-                      {faq.question}
-                    </dt>
-                    <dd className="mt-2 text-[15px] leading-relaxed text-[#E5D7C3]">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-serif-heading text-base font-bold text-[#F9F4EC]">
+                      <span>{faq.question}</span>
+                      <span
+                        aria-hidden="true"
+                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#14110F] text-sm font-bold text-[#F1B24A] transition-transform group-open:rotate-45"
+                      >
+                        +
+                      </span>
+                    </summary>
+                    <p className="mt-3 border-t border-[#F9F4EC]/10 pt-3 text-sm leading-relaxed text-[#E5D7C3]">
                       {faq.answer}
-                    </dd>
-                  </div>
+                    </p>
+                  </details>
                 ))}
-              </dl>
-            </section>
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* Keep exploring */}
-        <nav
-          aria-label={t('También te puede interesar', 'També et pot interessar')}
-          className="mx-auto max-w-7xl px-4 py-12 md:px-8"
-        >
-          <h2 className="font-serif-heading mb-5 text-xl font-bold md:text-2xl">
-            {t('También te puede interesar', 'També et pot interessar')}
-          </h2>
-          <ul className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {related.map(({ id: otherId, content: other }) => (
-              <li key={otherId}>
-                <Link
-                  href={getLandingPath(otherId, locale)}
-                  className="group flex h-full items-center justify-between gap-4 rounded-2xl border border-[#1A1512]/12 bg-[#FAF5ED] px-5 py-4 transition-shadow hover:shadow-md"
-                >
-                  <span>
-                    <span className="font-serif-heading block text-lg font-bold">
-                      {other.linkLabel}
-                    </span>
-                    <span className="mt-0.5 block text-sm text-[#574B42]">{other.linkBlurb}</span>
-                  </span>
-                  <span aria-hidden="true" className="text-xl font-bold text-[#A8241B]">
-                    →
-                  </span>
-                </Link>
-              </li>
-            ))}
-            <li>
-              <Link
-                href={`/${locale}/carta`}
-                className="group flex h-full items-center justify-between gap-4 rounded-2xl border border-[#1A1512]/12 bg-[#14110F] px-5 py-4 text-[#F9F4EC] transition-shadow hover:shadow-md"
-              >
-                <span>
-                  <span className="font-serif-heading block text-lg font-bold">
-                    {t('Carta completa', 'Carta completa')}
-                  </span>
-                  <span className="mt-0.5 block text-sm text-[#CBBBA8]">
-                    {t('Pizzas, pizzetas, empanadas y bebidas', 'Pizzes, pizzetes, empanades i begudes')}
-                  </span>
-                </span>
-                <span aria-hidden="true" className="text-xl font-bold text-[#EE6A2B]">
-                  →
-                </span>
-              </Link>
-            </li>
-          </ul>
-        </nav>
+        </section>
       </main>
 
       <Footer locale={locale} />

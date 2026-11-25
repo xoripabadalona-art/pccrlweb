@@ -22,6 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         languages: {
           'es-ES': `${siteUrl}/es`,
           'ca-ES': `${siteUrl}/ca`,
+          'x-default': `${siteUrl}/es`,
         },
       },
     },
@@ -34,6 +35,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         languages: {
           'es-ES': `${siteUrl}/es`,
           'ca-ES': `${siteUrl}/ca`,
+          'x-default': `${siteUrl}/es`,
         },
       },
     },
@@ -46,6 +48,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         languages: {
           'es-ES': `${siteUrl}/es/carta`,
           'ca-ES': `${siteUrl}/ca/carta`,
+          'x-default': `${siteUrl}/es/carta`,
         },
       },
     },
@@ -58,6 +61,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         languages: {
           'es-ES': `${siteUrl}/es/carta`,
           'ca-ES': `${siteUrl}/ca/carta`,
+          'x-default': `${siteUrl}/es/carta`,
         },
       },
     },
@@ -72,6 +76,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
           languages: {
             'es-ES': `${siteUrl}${getLandingPath(id, 'es')}`,
             'ca-ES': `${siteUrl}${getLandingPath(id, 'ca')}`,
+            'x-default': `${siteUrl}${getLandingPath(id, 'es')}`,
           },
         },
       }))

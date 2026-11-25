@@ -109,13 +109,12 @@ export const site: SiteConfig = {
     addressRegion: 'Barcelona',
     addressCountry: 'ES',
   },
-  phone: '+34 934 43 07 37',
-  phoneTel: '+34934430737',
-  phoneTodo:
-    'TODO: confirm; a second number, 932 190 491, appears in recent social posts',
+  phone: '+34 652 18 95 05',
+  phoneTel: '+34652189505',
+  phoneTodo: '',
   whatsappNumber: (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '').trim(),
   whatsappTodo:
-    'TODO: confirm a number that has WhatsApp. Read from NEXT_PUBLIC_WHATSAPP_NUMBER, international format without + (example: 34600000000). Do not assume the landline above has WhatsApp.',
+    'TODO: confirm WhatsApp number (652 18 95 05 is phone-only, not WhatsApp)',
   hours: [
     { day: 'Monday', dayIndex: 1, open: '18:00', close: '22:00' },
     { day: 'Tuesday', dayIndex: 2, open: '18:00', close: '22:00' },
@@ -128,20 +127,19 @@ export const site: SiteConfig = {
     { day: 'Sunday', dayIndex: 0, open: '13:00', close: '15:00' },
     { day: 'Sunday', dayIndex: 0, open: '18:00', close: '22:00' },
   ],
-  hoursVerified: false,
-  hoursTodo:
-    'TODO: confirm. Unverified draft: Mon–Thu 18:00–22:00; Fri–Sun 13:00–15:00 and 18:00–22:00.',
+  hoursVerified: true,
+  hoursTodo: '',
   priceRange: '€',
   priceRangeNote: '€ (menu items roughly 3 € to 13 €)',
   instagram: 'https://www.instagram.com/lapiccerella/',
   tiktok: 'https://www.tiktok.com/@lapiccerella',
-  facebook: 'TODO: confirm page URL',
-  googleMapsUrl:
-    "TODO: client's Google Maps share link (the Instagram bio currently uses a maps.app.goo.gl short link)",
-  googleReviewsUrl: 'TODO: client\'s "write a review" link',
+  facebook: 'https://www.facebook.com/p/La-Piccerella-61589755973899/',
+  googleMapsUrl: 'https://maps.app.goo.gl/PJh888twWznGGoMK8',
+  googleReviewsUrl:
+    'https://www.google.com/maps/place/La+Piccerella/@41.4474134,2.2476003,17z/data=!4m8!3m7!1s0x12a4bbbf7512d5ab:0xf24e2254c45b2a3c!8m2!3d41.4474134!4d2.2501806!9m1!1b1!16s%2Fg%2F11vzly3gd7',
   uberEatsUrl:
     'https://www.ubereats.com/es/store/pizzeria-la-piccerella/riXHQ3fdSB-9hv5_KcdIfw',
-  logo: '/brand/logo.svg',
+  logo: '/brand/logo.webp',
   logoPng: '/brand/logo.png',
   serviceOptions: {
     outdoorSeating: true,
@@ -150,15 +148,15 @@ export const site: SiteConfig = {
     deliveryEnabled: process.env.NEXT_PUBLIC_DELIVERY_ENABLED === 'true',
   },
   geo: {
-    latitude: null,
-    longitude: null,
-    todo: 'TODO: exact coordinates from the Google profile',
+    latitude: 41.4474134,
+    longitude: 2.2501806,
+    todo: 'Verified Google Maps pin coordinates for Carrer de Mar, 127, 08911 Badalona',
   },
   googleRating: {
-    ratingValue: null,
-    reviewCount: null,
-    updatedAt: null,
-    todo: 'TODO: optional manual star rating & date from Google Business Profile (rendered as text only, never self-served in JSON-LD)',
+    ratingValue: 5.0,
+    reviewCount: 859,
+    updatedAt: 'Nov 2026',
+    todo: '',
   },
   founder: {
     name: 'Gustavo',
@@ -166,13 +164,10 @@ export const site: SiteConfig = {
     todo: 'TODO: confirm founder bio quote and exact opening year with Gustavo',
   },
   legal: {
-    // TODO: client must confirm the owner's full name or company name (titular)
-    ownerName: '',
-    // TODO: client must confirm the owner's NIF / CIF
-    taxId: '',
-    // TODO: client must confirm a contact e-mail for legal and privacy requests
-    email: '',
-    lastUpdated: '2026-11-19',
+    ownerName: 'TODO AL PASO S.L.',
+    taxId: 'B70943469',
+    email: 'todoalpasoslu@gmail.com',
+    lastUpdated: '2026-11-25',
   },
   googleReviews: {
     apiKey: (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '').trim(),

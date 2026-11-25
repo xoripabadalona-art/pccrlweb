@@ -23,7 +23,9 @@ export function FloatingWhatsApp({ locale }: FloatingWhatsAppProps) {
   useEffect(() => {
     setMounted(true);
 
-    const handleScroll = () => {
+    let rafPending = false;
+    const updateVisibility = () => {
+      rafPending = false;
       const currentY = window.scrollY;
       const delta = currentY - lastScrollY.current;
       // Hide on scroll down, show on scroll up on mobile viewports (< 768px)
@@ -37,6 +39,13 @@ export function FloatingWhatsApp({ locale }: FloatingWhatsAppProps) {
         setHiddenOnMobileScroll(false);
       }
       lastScrollY.current = currentY;
+    };
+
+    const handleScroll = () => {
+      if (!rafPending) {
+        rafPending = true;
+        window.requestAnimationFrame(updateVisibility);
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -67,8 +76,8 @@ export function FloatingWhatsApp({ locale }: FloatingWhatsAppProps) {
 
   return (
     <div
-      className={`fixed bottom-5 left-4 z-40 transition-transform duration-300 md:bottom-6 md:left-6 ${
-        hiddenOnMobileScroll ? 'translate-y-24 md:translate-y-0' : 'translate-y-0'
+      className={`fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-4 z-40 transition-transform duration-300 md:bottom-6 md:left-6 ${
+        hiddenOnMobileScroll ? 'translate-y-28 md:translate-y-0' : 'translate-y-0'
       }`}
     >
       <button

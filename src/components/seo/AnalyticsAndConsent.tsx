@@ -7,11 +7,13 @@ import type { Locale } from '@/data/copy';
 export function AnalyticsAndConsent({ locale }: { locale: Locale }) {
   const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
   const ga4Id = process.env.NEXT_PUBLIC_GA4_ID;
+  const clarityId = process.env.NEXT_PUBLIC_CLARITY_ID;
+  const needsConsent = Boolean(ga4Id || clarityId);
 
   const [consent, setConsent] = useState<'granted' | 'denied' | 'pending'>('pending');
 
   useEffect(() => {
-    if (!ga4Id || typeof window === 'undefined') return;
+    if (!needsConsent || typeof window === 'undefined') return;
     try {
       const saved = window.localStorage.getItem('la-piccerella-ga-consent');
       if (saved === 'granted' || saved === 'denied') {
@@ -20,7 +22,7 @@ export function AnalyticsAndConsent({ locale }: { locale: Locale }) {
     } catch {
       // ignore storage errors
     }
-  }, [ga4Id]);
+  }, [needsConsent]);
 
   const handleConsent = (choice: 'granted' | 'denied') => {
     setConsent(choice);
@@ -31,7 +33,7 @@ export function AnalyticsAndConsent({ locale }: { locale: Locale }) {
     }
   };
 
-  if (!plausibleDomain && !ga4Id) {
+  if (!plausibleDomain && !needsConsent) {
     return null;
   }
 
@@ -63,7 +65,19 @@ export function AnalyticsAndConsent({ locale }: { locale: Locale }) {
         </>
       )}
 
-      {ga4Id && consent === 'pending' && (
+      {clarityId && consent === 'granted' && (
+        <Script id="ms-clarity-init" strategy="afterInteractive">
+          {`
+            (function(c,l,a,r,i,t,y){
+              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            })(window, document, "clarity", "script", ${JSON.stringify(clarityId)});
+          `}
+        </Script>
+      )}
+
+      {needsConsent && consent === 'pending' && (
         <div
           role="region"
           aria-label={locale === 'ca' ? 'Avís de galetes' : 'Aviso de cookies'}
@@ -71,8 +85,8 @@ export function AnalyticsAndConsent({ locale }: { locale: Locale }) {
         >
           <p className="mb-3 leading-relaxed">
             {locale === 'ca'
-              ? "Utilitzem analítica opcional per mesurar l'ús de la cistella. Acceptes activar Google Analytics?"
-              : 'Utilizamos analítica opcional para medir el uso del carrito. ¿Aceptas activar Google Analytics?'}
+              ? "Utilitzem analítica opcional per millorar la web i la carta. Acceptes activar les galetes d'analítica?"
+              : 'Utilizamos analítica opcional para mejorar la web y la carta. ¿Aceptas activar las cookies de analítica?'}
           </p>
           <div className="flex items-center justify-end gap-2">
             <button

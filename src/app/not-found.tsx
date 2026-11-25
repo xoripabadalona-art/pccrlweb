@@ -20,7 +20,7 @@ export default function NotFound() {
       </h1>
       <p className="mb-8 max-w-md text-base text-[#CBBBA8]">
         La página que buscas no existe o ha cambiado de dirección. Vuelve al inicio o
-        consulta nuestra carta de pizzas y empanadas en Badalona.
+        consulta nuestra carta de pizzas y pizzetas en Badalona.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-4">
         <Link

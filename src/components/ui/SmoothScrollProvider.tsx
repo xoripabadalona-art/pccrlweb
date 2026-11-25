@@ -10,8 +10,9 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     const prefersReducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)'
     ).matches;
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
-    if (prefersReducedMotion) {
+    if (prefersReducedMotion || isTouchDevice) {
       return;
     }
 

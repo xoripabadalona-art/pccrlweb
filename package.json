@@ -2,7 +2,7 @@
   "name": "la-piccerella-web",
   "version": "1.0.0",
   "private": true,
-  "description": "La Piccerella — Pizzería artesanal en Badalona. Pizzas, pizzetas y empanadas con masa fermentada 48 horas.",
+  "description": "La Piccerella — Pizzería artesanal en Badalona. Pizzas grandes y pizzetas con masa fermentada 48 horas.",
   "scripts": {
     "prebuild": "node scripts/check-build.mjs",
     "dev": "next dev",

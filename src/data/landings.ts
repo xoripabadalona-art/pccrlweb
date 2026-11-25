@@ -1,15 +1,16 @@
 import { site } from './site';
-import { getMenuItemById, menuItems } from './menu';
+import { getMenuItemById, getPizzetas, menuItems } from './menu';
+import { PIZZETA_PROMO } from '../lib/promo';
 import type { Locale } from './copy';
 
 /**
  * Focused landing pages: one page per thing people actually search for
- * ("empanadas argentinas Badalona", "pizza para llevar Badalona", the family
+ * ("pizzetas Badalona", "pizza para llevar Badalona", the family
  * pack). Every fact here comes from the menu data or from statements already
  * published elsewhere on the site — prices and counts are computed, not typed.
  */
 
-export type LandingId = 'empanadas' | 'para-llevar' | 'pack';
+export type LandingId = 'pizzetas' | 'para-llevar' | 'pack' | 'mayoreo' | 'centro-playa';
 
 export interface LandingSection {
   heading: string;
@@ -41,12 +42,26 @@ export interface LandingContent {
   linkBlurb: string;
 }
 
-export const LANDING_IDS: LandingId[] = ['empanadas', 'para-llevar', 'pack'];
+export const LANDING_IDS: LandingId[] = [
+  'pizzetas',
+  'para-llevar',
+  'pack',
+  'mayoreo',
+  'centro-playa',
+];
 
 const SLUGS: Record<LandingId, Record<Locale, string>> = {
-  empanadas: { es: 'empanadas-argentinas-badalona', ca: 'empanades-argentines-badalona' },
+  pizzetas: { es: 'pizzetas-badalona', ca: 'pizzetes-badalona' },
   'para-llevar': { es: 'pizza-para-llevar-badalona', ca: 'pizza-per-emportar-badalona' },
   pack: { es: 'pack-degustacion-pizzas', ca: 'pack-degustacio-pizzes' },
+  mayoreo: {
+    es: 'pizzas-eventos-fiestas-mayoreo-badalona',
+    ca: 'pizzes-esdeveniments-festes-badalona',
+  },
+  'centro-playa': {
+    es: 'pizzeria-carrer-de-mar-playa-badalona',
+    ca: 'pizzeria-carrer-de-mar-platja-badalona',
+  },
 };
 
 export function getLandingSlug(id: LandingId, locale: Locale) {
@@ -66,131 +81,149 @@ function euros(cents: number) {
   return `${(cents / 100).toFixed(2).replace('.', ',')} €`;
 }
 
-const EMPANADA_IDS = menuItems.filter((i) => i.category === 'empanadas').map((i) => i.id);
 const pizzas = menuItems.filter((i) => i.category === 'pizzas');
 const pizzaPrices = pizzas.map((p) => p.priceCents);
 const cheapestPizza = Math.min(...pizzaPrices);
 const dearestPizza = Math.max(...pizzaPrices);
 
-const empanada = getMenuItemById('empanada-carne');
-const unitPrice = empanada?.sizes?.find((s) => s.id === '1-ud')?.priceCents ?? 300;
-const halfDozen = empanada?.sizes?.find((s) => s.id === '6-uds')?.priceCents ?? 1500;
-const dozen = empanada?.sizes?.find((s) => s.id === '12-uds')?.priceCents ?? 3000;
 const packPrice = getMenuItemById('pack-degustacion-familiar')?.priceCents ?? 3499;
 const sliceFrom = getMenuItemById('pizzeta-margarita')?.priceCents ?? 300;
 const street = site.addressStructured.streetAddress;
 
-function empanadas(locale: Locale): LandingContent {
+function pizzetas(locale: Locale): LandingContent {
+  const range = getPizzetas();
+  const tiers = [...new Set(range.map((p) => p.priceCents))].sort((a, b) => a - b);
+  const from = tiers[0] ?? 300;
+  const tierList = tiers.map((t) => euros(t));
+  const names = (cents: number) =>
+    range
+      .filter((p) => p.priceCents === cents)
+      .map((p) =>
+        p.name[locale]
+          .replace(/^Pizzeta\s+/i, '')
+          .replace(/^Porci[oó]n?\s+/i, '')
+          .replace(/\s*\(Pizzeta\)\s*$/i, '')
+      )
+      .join(', ');
   const base = {
-    id: 'empanadas' as const,
-    slug: SLUGS.empanadas[locale],
-    itemIds: EMPANADA_IDS,
+    id: 'pizzetas' as const,
+    slug: SLUGS.pizzetas[locale],
+    itemIds: range.map((p) => p.id),
   };
+  const { pay, get } = PIZZETA_PROMO;
 
   if (locale === 'ca') {
     return {
       ...base,
-      metaTitle: 'Empanades argentines a Badalona | La Piccerella',
-      metaDescription: `Empanades argentines a Badalona: carn tallada a ganivet, pollastre, pernil i formatge i dues de vegetarianes. Des de ${euros(unitPrice)}. Recull-les al ${street}.`,
-      eyebrow: 'Recepta de tradició argentina',
-      h1: 'Empanades argentines a Badalona',
-      lead: `${EMPANADA_IDS.length} sabors fets al nostre obrador del ${street}. Emporta-te'n una per ${euros(unitPrice)}, mitja dotzena per ${euros(halfDozen)} o una dotzena per ${euros(dozen)}.`,
-      itemsHeading: 'Les nostres empanades',
+      metaTitle: `Pizzetes a Badalona des de ${euros(from)} | La Piccerella`,
+      metaDescription: `Pizzetes artesanals a Badalona des de ${euros(from)}. Promo: paga'n ${pay} i emporta-te'n ${get}. Massa fermentada 48 h, fetes al moment. Recull-les al ${street}.`,
+      eyebrow: 'Les més demanades',
+      h1: `Pizzetes a Badalona des de ${euros(from)}`,
+      lead: `Individuals i fetes al moment amb la nostra massa de 48 hores. Paga'n ${pay} i emporta-te'n ${get}.`,
+      itemsHeading: 'Tria les teves pizzetes',
       sections: [
         {
-          heading: `${EMPANADA_IDS.length} farcits per triar`,
-          paragraphs: [
-            "La de carn porta vedella tallada a ganivet, ceba blanca i tendra, ou dur i espècies, a l'estil tradicional argentí. La de pollastre segueix la mateixa base.",
-            'Si prefereixes formatge, tens la de pernil dolç amb mozzarella, la de quatre formatges (cabra, blau, mozzarella i emmental amb nou moscada) i la de ceba caramel·litzada amb mozzarella.',
-          ],
-        },
-        {
-          heading: 'Per unitat, mitja dotzena o dotzena',
+          heading: `Promo: paga'n ${pay} i emporta-te'n ${get}`,
           list: [
-            `1 unitat: ${euros(unitPrice)}`,
-            `Mitja dotzena (6 unitats): ${euros(halfDozen)}`,
-            `Dotzena (12 unitats): ${euros(dozen)}`,
-          ],
-          paragraphs: [
-            `A partir de mitja dotzena, cada empanada surt a ${euros(Math.round(halfDozen / 6))}.`,
+            `Per cada ${get} pizzetes del mateix preu, una et surt gratis.`,
+            'Pots combinar sabors, sempre que siguin del mateix preu.',
+            `Es repeteix: amb ${get * 2} pizzetes del mateix preu, dues són gratis.`,
+            'També val per a les comandes per WhatsApp: el descompte surt calculat al missatge.',
           ],
         },
         {
-          heading: 'Vegetarianes i al·lèrgens',
+          heading: 'Sabors i preus',
+          list: tiers.map((t) => `${euros(t)}: ${names(t)}`),
+        },
+        {
+          heading: 'Fetes al moment',
           paragraphs: [
-            "La de quatre formatges i la de formatge i ceba són vegetarianes. Totes porten gluten; les de carn i pollastre porten ou, i les de formatge, lactis. Si tens una al·lèrgia, indica-ho a les notes de la comanda.",
+            "La massa reposa 48 hores en fred abans d'estirar-la. Cada pizzeta s'estira i es cou en el moment, amb una base fina, lleugera i cruixent.",
+          ],
+        },
+        {
+          heading: 'Com demanar-les',
+          ordered: true,
+          list: [
+            'Afegeix les pizzetes que vulguis a la comanda.',
+            "Indica el teu nom i l'hora de recollida i envia el missatge per WhatsApp.",
+            `Recull-les al ${street}, Badalona.`,
           ],
         },
       ],
       faqs: [
         {
-          question: 'Quant costen les empanades?',
-          answer: `${euros(unitPrice)} la unitat, ${euros(halfDozen)} la mitja dotzena i ${euros(dozen)} la dotzena.`,
+          question: 'Quant costen les pizzetes?',
+          answer: `Depèn del sabor: ${tierList.join(' o ')}.`,
         },
         {
-          question: 'Teniu empanades vegetarianes?',
-          answer: 'Sí, dues: la de quatre formatges i la de formatge i ceba caramel·litzada.',
+          question: 'Com funciona la promo?',
+          answer: `Paga'n ${pay} i emporta-te'n ${get}: per cada ${get} pizzetes del mateix preu, una és gratis. Es pot repetir i val també per WhatsApp.`,
         },
         {
-          question: 'Com les demano?',
-          answer: `Afegeix-les a la comanda, indica el teu nom i l'hora de recollida i envia el missatge per WhatsApp. Les reculls al ${street}, Badalona.`,
+          question: 'Puc barrejar sabors a la promo?',
+          answer: 'Sí, mentre siguin pizzetes del mateix preu.',
         },
       ],
-      linkLabel: 'Empanades argentines',
-      linkBlurb: `${EMPANADA_IDS.length} sabors des de ${euros(unitPrice)}`,
+      linkLabel: 'Pizzetes',
+      linkBlurb: `Des de ${euros(from)} · paga'n ${pay}, emporta-te'n ${get}`,
     };
   }
 
   return {
     ...base,
-    metaTitle: 'Empanadas argentinas en Badalona | La Piccerella',
-    metaDescription: `Empanadas argentinas en Badalona: carne cortada a cuchillo, pollo, jamón y queso y dos vegetarianas. Desde ${euros(unitPrice)}. Recógelas en ${street}.`,
-    eyebrow: 'Receta de tradición argentina',
-    h1: 'Empanadas argentinas en Badalona',
-    lead: `${EMPANADA_IDS.length} sabores hechos en nuestro obrador de ${street}. Llévate una por ${euros(unitPrice)}, media docena por ${euros(halfDozen)} o una docena por ${euros(dozen)}.`,
-    itemsHeading: 'Nuestras empanadas',
+    metaTitle: `Pizzetas en Badalona desde ${euros(from)} | La Piccerella`,
+    metaDescription: `Pizzetas artesanales en Badalona desde ${euros(from)}. Promo: paga ${pay} y llévate ${get}. Masa fermentada 48 h, hechas al momento. Recógelas en ${street}.`,
+    eyebrow: 'Las más pedidas',
+    h1: `Pizzetas en Badalona desde ${euros(from)}`,
+    lead: `Individuales y hechas al momento con nuestra masa de 48 horas. Paga ${pay} y llévate ${get}.`,
+    itemsHeading: 'Elige tus pizzetas',
     sections: [
       {
-        heading: `${EMPANADA_IDS.length} rellenos para elegir`,
-        paragraphs: [
-          'La de carne lleva ternera cortada a cuchillo, cebolla blanca y verde, huevo duro y especias, al estilo tradicional argentino. La de pollo sigue la misma base.',
-          'Si prefieres queso, tienes la de jamón dulce con mozzarella, la de cuatro quesos (cabra, azul, mozzarella y emmental con nuez moscada) y la de cebolla caramelizada con mozzarella.',
-        ],
-      },
-      {
-        heading: 'Por unidad, media docena o docena',
+        heading: `Promo: paga ${pay} y llévate ${get}`,
         list: [
-          `1 unidad: ${euros(unitPrice)}`,
-          `Media docena (6 unidades): ${euros(halfDozen)}`,
-          `Docena (12 unidades): ${euros(dozen)}`,
-        ],
-        paragraphs: [
-          `A partir de media docena, cada empanada sale a ${euros(Math.round(halfDozen / 6))}.`,
+          `Por cada ${get} pizzetas del mismo precio, una te sale gratis.`,
+          'Puedes combinar sabores, siempre que sean del mismo precio.',
+          `Se repite: con ${get * 2} pizzetas del mismo precio, dos son gratis.`,
+          'También vale para los pedidos por WhatsApp: el descuento sale calculado en el mensaje.',
         ],
       },
       {
-        heading: 'Vegetarianas y alérgenos',
+        heading: 'Sabores y precios',
+        list: tiers.map((t) => `${euros(t)}: ${names(t)}`),
+      },
+      {
+        heading: 'Hechas al momento',
         paragraphs: [
-          'La de cuatro quesos y la de queso y cebolla son vegetarianas. Todas llevan gluten; las de carne y pollo llevan huevo, y las de queso, lácteos. Si tienes una alergia, indícalo en las notas del pedido.',
+          'La masa reposa 48 horas en frío antes de estirarla. Cada pizzeta se estira y se hornea al momento, con una base fina, ligera y crujiente.',
+        ],
+      },
+      {
+        heading: 'Cómo pedirlas',
+        ordered: true,
+        list: [
+          'Añade al pedido las pizzetas que quieras.',
+          'Indica tu nombre y la hora de recogida y envía el mensaje por WhatsApp.',
+          `Recógelas en ${street}, Badalona.`,
         ],
       },
     ],
     faqs: [
       {
-        question: '¿Cuánto cuestan las empanadas?',
-        answer: `${euros(unitPrice)} la unidad, ${euros(halfDozen)} la media docena y ${euros(dozen)} la docena.`,
+        question: '¿Cuánto cuestan las pizzetas?',
+        answer: `Depende del sabor: ${tierList.join(' o ')}.`,
       },
       {
-        question: '¿Tenéis empanadas vegetarianas?',
-        answer: 'Sí, dos: la de cuatro quesos y la de queso y cebolla caramelizada.',
+        question: '¿Cómo funciona la promo?',
+        answer: `Paga ${pay} y llévate ${get}: por cada ${get} pizzetas del mismo precio, una es gratis. Se puede repetir y vale también por WhatsApp.`,
       },
       {
-        question: '¿Cómo las pido?',
-        answer: `Añádelas al pedido, indica tu nombre y la hora de recogida y envía el mensaje por WhatsApp. Las recoges en ${street}, Badalona.`,
+        question: '¿Puedo mezclar sabores en la promo?',
+        answer: 'Sí, mientras sean pizzetas del mismo precio.',
       },
     ],
-    linkLabel: 'Empanadas argentinas',
-    linkBlurb: `${EMPANADA_IDS.length} sabores desde ${euros(unitPrice)}`,
+    linkLabel: 'Pizzetas',
+    linkBlurb: `Desde ${euros(from)} · paga ${pay}, llévate ${get}`,
   };
 }
 
@@ -240,11 +273,12 @@ function paraLlevar(locale: Locale): LandingContent {
           ],
         },
         {
-          heading: "Prefereixes que te la portin a casa?",
-          paragraphs: [
-            'Per WhatsApp preparem comandes per recollir. El repartiment a domicili a Badalona es fa a través del nostre perfil a Uber Eats.',
+          heading: 'Targeta de Fidelitat: 5 Stickers = 1 Pizza Gratis',
+          list: [
+            'Per cada pizza gran (32 cm) que recullis al local et portes 1 sticker.',
+            'En reunir 5 stickers, tens 1 pizza gran totalment gratis.',
+            'Demanant directament per WhatsApp i recollint al local gaudeixes dels preus reals de carta sense recàrrecs d’apps externes.',
           ],
-          link: { label: 'Demanar a domicili a Uber Eats', href: site.uberEatsUrl, external: true },
         },
       ],
       faqs: [
@@ -253,16 +287,16 @@ function paraLlevar(locale: Locale): LandingContent {
           answer: `Normalment uns 15–25 minuts, segons el volum del forn. Cada pizza s'estira i es cou en el moment.`,
         },
         {
+          question: 'Com funcionen els stickers per aconseguir una pizza gratis?',
+          answer: 'Per cada pizza gran que demanis al local et donem 1 sticker. Quan ajuntes 5 stickers, et regalem 1 pizza gran gratis.',
+        },
+        {
           question: 'Puc demanar per a una hora concreta?',
           answer: "Sí. En enviar la comanda pots triar l'hora de recollida que prefereixis o deixar «com més aviat millor».",
         },
-        {
-          question: 'Feu repartiment a domicili?',
-          answer: 'Per WhatsApp gestionem comandes per recollir al local. Per rebre-la a casa, demana a través d’Uber Eats.',
-        },
       ],
       linkLabel: 'Pizza per emportar',
-      linkBlurb: 'Demana per WhatsApp i recull-la',
+      linkBlurb: '5 stickers = 1 pizza gratis',
     };
   }
 
@@ -270,9 +304,9 @@ function paraLlevar(locale: Locale): LandingContent {
     ...base,
     metaTitle: 'Pizza para llevar en Badalona | La Piccerella',
     metaDescription: `Pizza para llevar en Badalona: pide por WhatsApp y recógela en ${street}. Masa fermentada 48 h, ${pizzas.length} pizzas enteras y porciones desde ${euros(sliceFrom)}.`,
-    eyebrow: 'Recogida en el local',
+    eyebrow: 'Recogida en el local · 5 Stickers = 1 Pizza Gratis',
     h1: 'Pizza para llevar en Badalona',
-    lead: `Elige tu pizza, envía el pedido por WhatsApp y pasa a recogerla recién hecha por ${street}.`,
+    lead: `Elige tu pizza, envía el pedido por WhatsApp y pasa a recogerla recién hecha por ${street}. Por cada pizza grande suma 1 sticker y llévate 1 pizza gratis al juntar 5.`,
     itemsHeading: 'Para empezar tu pedido',
     sections: [
       {
@@ -285,9 +319,17 @@ function paraLlevar(locale: Locale): LandingContent {
         ],
       },
       {
-        heading: 'Pizza entera o porción',
+        heading: 'Tarjeta de Fidelidad: 5 Stickers = 1 Pizza Gratis',
+        list: [
+          'Por cada pizza grande (32 cm) que recojas en el local te llevas 1 sticker.',
+          'Al juntar 5 stickers, te llevas 1 pizza grande totalmente gratis.',
+          'Pidiendo directamente por WhatsApp para recoger disfrutas de precios de carta sin comisiones de apps de reparto y de la pizza recién salida del horno.',
+        ],
+      },
+      {
+        heading: 'Pizza entera o pizzeta individual',
         paragraphs: [
-          `En la carta hay ${pizzas.length} pizzas enteras, de entre ${euros(cheapestPizza)} y ${euros(dearestPizza)}. Si vas con prisa o quieres probar, la porción de Margarita sale por ${euros(sliceFrom)}.`,
+          `En la carta hay ${pizzas.length} pizzas enteras, de entre ${euros(cheapestPizza)} y ${euros(dearestPizza)}. Si vas con prisa o quieres probar, tienes nuestras pizzetas individuales desde ${euros(sliceFrom)} (con promo paga 5 y llévate 6).`,
         ],
       },
       {
@@ -296,13 +338,6 @@ function paraLlevar(locale: Locale): LandingContent {
           'La masa reposa 48 horas en frío antes de estirarla. Esa fermentación lenta le da más sabor y una base fina, ligera y crujiente. Cada pizza se estira y se hornea al momento.',
         ],
       },
-      {
-        heading: '¿Prefieres que te la lleven a casa?',
-        paragraphs: [
-          'Por WhatsApp preparamos pedidos para recoger. El reparto a domicilio en Badalona se hace a través de nuestro perfil en Uber Eats.',
-        ],
-        link: { label: 'Pedir a domicilio en Uber Eats', href: site.uberEatsUrl, external: true },
-      },
     ],
     faqs: [
       {
@@ -310,16 +345,16 @@ function paraLlevar(locale: Locale): LandingContent {
         answer: 'Normalmente unos 15–25 minutos, según el volumen del horno. Cada pizza se estira y se hornea al momento.',
       },
       {
+        question: '¿Cómo funcionan los stickers para tener una pizza gratis?',
+        answer: 'Por cada pizza grande que compres te entregamos 1 sticker. Al reunir 5 stickers, te llevas 1 pizza grande gratis.',
+      },
+      {
         question: '¿Puedo pedir para una hora concreta?',
         answer: 'Sí. Al enviar el pedido puedes elegir la hora de recogida que prefieras o dejar «lo antes posible».',
       },
-      {
-        question: '¿Hacéis reparto a domicilio?',
-        answer: 'Por WhatsApp gestionamos pedidos para recoger en el local. Para recibirla en casa, pide a través de Uber Eats.',
-      },
     ],
     linkLabel: 'Pizza para llevar',
-    linkBlurb: 'Pide por WhatsApp y recógela',
+    linkBlurb: '5 stickers = 1 pizza gratis',
   };
 }
 
@@ -424,10 +459,230 @@ function pack(locale: Locale): LandingContent {
   };
 }
 
+function mayoreo(locale: Locale): LandingContent {
+  const base = {
+    id: 'mayoreo' as const,
+    slug: SLUGS.mayoreo[locale],
+    itemIds: [
+      'pack-degustacion-familiar',
+      'pizzeta-margarita',
+      'pizzeta-pepperoni',
+      'pizzeta-prosciutto-funghi',
+      'pizza-pepperoni',
+      'pizza-4-quesos',
+    ],
+  };
+
+  if (locale === 'ca') {
+    return {
+      ...base,
+      metaTitle: 'Pizzes per a Esdeveniments i Festes | La Piccerella',
+      metaDescription: `Pizzes i pizzetes a l’engròs per a festes, aniversaris i esdeveniments a Badalona. Massa fermentada 48 h i preus especials per volum al ${street}.`,
+      eyebrow: 'Aniversaris, empreses, escoles i grups',
+      h1: 'Pizzes i pizzetes a l’engròs per a festes i esdeveniments a Badalona',
+      lead: `Organitza el teu aniversari, reunió d’empresa, festa escolar o celebració a Badalona amb les nostres pizzetes individuals i pizzes grans de massa fermentada 48 hores. Pressupost a mida per volum.`,
+      itemsHeading: 'Formats estrella per a festes i grups',
+      showPizzaNames: '15 varietats de pizza per combinar',
+      sections: [
+        {
+          heading: 'Per què les nostres pizzetes i pizzes triomfen a les festes?',
+          list: [
+            'Pizzetes individuals (~16 cm) fetes al moment: format ideal per a càtering i aniversaris sense necessitat de plats ni coberts.',
+            `6 sabors de pizzeta (Margarita, Pepperoni, Prosciutto, Prosciutto e Funghi, Barbacoa i Mexicana) i ${pizzas.length} varietats de pizza gran (32 cm).`,
+            'Massa artesanal amb 48 hores de fermentació lenta: lleugera, esponjosa i boníssima fins i tot per a grups grans.',
+          ],
+        },
+        {
+          heading: 'Tarifes especials per volum (Mayoreo) amb en Gustavo',
+          paragraphs: [
+            `Per a comandes petites ja comptes amb la promo Paga’n 5 i emporta-te’n 6 en pizzetes (des de ${euros(sliceFrom)}) i el Pack Familiar de 3 Pizzes Grans per ${euros(packPrice)}.`,
+            'Per a comandes grans d’esdeveniments, festes infantils, clubs esportius, escoles o oficines, preparem un preu especial per volum ajustat a la quantitat que necessitis.',
+          ],
+        },
+        {
+          heading: 'Com demanar pressupost per al teu esdeveniment',
+          ordered: true,
+          list: [
+            `Escriu-nos per WhatsApp o truca’ns al ${site.phone} indicant la data de la festa i el nombre aproximat de persones.`,
+            'En Gustavo t’assessorarà sobre la combinació ideal de pizzetes i pizzes grans i et tancarà un pressupost a mida.',
+            `El dia de l’esdeveniment ho enfornem tot al moment perquè ho recullis calent i puntual al ${street}, Badalona.`,
+          ],
+        },
+      ],
+      faqs: [
+        {
+          question: 'Feu preus especials per volum per a festes i esdeveniments?',
+          answer: 'Sí. Per a aniversaris, empreses, escoles o grups grans a Badalona fem pressupostos personalitzats segons la quantitat de pizzetes o pizzes grans.',
+        },
+        {
+          question: 'Amb quanta antelació cal reservar una comanda gran?',
+          answer: 'Recomanem avisar amb almenys 24–48 hores d’antelació per preparar totes les boles de massa amb la nostra fermentació lenta de 48 hores.',
+        },
+        {
+          question: 'Quanta quantitat recomaneu per persona?',
+          answer: 'Per a pica-pica o aniversaris es calculen unes 2 pizzetes individuals per persona, o 1 pizza gran (32 cm) per cada 2–3 persones.',
+        },
+      ],
+      linkLabel: 'Festes i esdeveniments',
+      linkBlurb: 'Comandes grans i preus per volum',
+    };
+  }
+
+  return {
+    ...base,
+    metaTitle: 'Pizzas para Eventos, Fiestas y Mayoreo | La Piccerella',
+    metaDescription: `Pizzas y pizzetas por mayoreo para fiestas, cumpleaños y eventos en Badalona. Masa fermentada 48 h y precios especiales por volumen en ${street}.`,
+    eyebrow: 'Cumpleaños, empresas, colegios y grupos',
+    h1: 'Pizzas y pizzetas por mayoreo para fiestas y eventos en Badalona',
+    lead: 'Organiza tu cumpleaños, evento de empresa, fiesta escolar o celebración en Badalona con nuestras pizzetas individuales y pizzas grandes de masa fermentada 48 horas. Presupuesto a medida por volumen.',
+    itemsHeading: 'Formatos estrella para fiestas y grupos',
+    showPizzaNames: '15 variedades de pizza para combinar',
+    sections: [
+      {
+        heading: '¿Por qué nuestras pizzetas y pizzas triunfan en fiestas y eventos?',
+        list: [
+          'Pizzetas individuales (~16 cm) recién horneadas: el formato perfecto para cumpleaños, eventos y picoteos sin necesidad de platos ni cubiertos.',
+          `6 sabores de pizzeta (Margarita, Pepperoni, Prosciutto, Prosciutto e Funghi, Barbacoa y Mexicana) y ${pizzas.length} variedades de pizza grande (32 cm).`,
+          'Masa artesanal con 48 horas de fermentación lenta: ligera, tierna y de fácil digestión para niños y adultos.',
+        ],
+      },
+      {
+        heading: 'Precios especiales por volumen (Mayoreo) con Gustavo',
+        paragraphs: [
+          `Para reuniones pequeñas ya cuentas con la promo Paga 5 y llévate 6 en pizzetas (desde ${euros(sliceFrom)}) y el Pack Familiar de 3 Pizzas Grandes por ${euros(packPrice)}.`,
+          'Para pedidos grandes de mayoreo (cumpleaños, fiestas privadas, colegios, clubes deportivos, rodajes o empresas), acordamos contigo una tarifa especial por volumen según la cantidad.',
+        ],
+      },
+      {
+        heading: 'Cómo pedir presupuesto para tu evento en Badalona',
+        ordered: true,
+        list: [
+          `Escríbenos por WhatsApp o llámanos al ${site.phone} indicando la fecha del evento y el número aproximado de personas.`,
+          'Gustavo te ayudará a calcular la combinación ideal de pizzetas y pizzas grandes y te dará un presupuesto cerrado a medida.',
+          `El día de la celebración horneamos todo a la hora acordada para que lo recojas recién salido del horno en ${street}, Badalona.`,
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: '¿Hacéis precios especiales de mayoreo para fiestas y eventos?',
+        answer: 'Sí. Para cumpleaños, empresas, colegios o grupos grandes en Badalona preparamos presupuestos personalizados por volumen según la cantidad de pizzetas o pizzas grandes.',
+      },
+      {
+        question: '¿Con cuánta antelación debo encargar un pedido grande?',
+        answer: 'Recomendamos reservar con al menos 24–48 horas de antelación para preparar todas las bolas de masa con nuestra fermentación lenta de 48 horas.',
+      },
+      {
+        question: '¿Qué cantidad recomendáis por persona en una fiesta?',
+        answer: 'Para picoteo o cumpleaños suelen calcularse 2 pizzetas individuales por persona, o 1 pizza grande (32 cm) por cada 2–3 personas.',
+      },
+    ],
+    linkLabel: 'Fiestas, eventos y mayoreo',
+    linkBlurb: 'Cumpleaños, empresas y pedidos por volumen',
+  };
+}
+
+function centroPlaya(locale: Locale): LandingContent {
+  const base = {
+    id: 'centro-playa' as const,
+    slug: SLUGS['centro-playa'][locale],
+    itemIds: [
+      'pizzeta-margarita',
+      'pizzeta-pepperoni',
+      'pizza-pepperoni',
+      'pizza-margarita',
+      'pizza-prosciutto-funghi',
+      'pack-degustacion-familiar',
+    ],
+  };
+
+  if (locale === 'ca') {
+    return {
+      ...base,
+      metaTitle: 'Pizzeria al Carrer de Mar i Platja Badalona | La Piccerella',
+      metaDescription: `Pizzeria artesanal al ${street} (Badalona Centre), a 2 min de la Rambla i la platja. Pizzes 48 h, pizzetes des de 3 € i 5 stickers = 1 pizza gratis.`,
+      eyebrow: 'Badalona Centre · Carrer de Mar, 127',
+      h1: 'Pizzeria artesanal al Carrer de Mar i a prop de la platja de Badalona',
+      lead: `Al bell mig del passeig de vianants del ${street}, a 2 minuts de la Rambla de Badalona, la Platja dels Pescadors i el metro L2 Badalona Pompeu Fabra.`,
+      itemsHeading: 'Les més demanades al centre de Badalona',
+      sections: [
+        {
+          heading: 'A dos passos de la Rambla i la platja de Badalona',
+          paragraphs: [
+            `El nostre obrador és al ${street} (08911 Badalona), al cor comercial del barri del Centre i a tocar de Casagemes, Dalt de la Vila i el Pont del Petroli.`,
+            'Tant si passeges pel Carrer de Mar com si puges de la platja, pots endur-te una pizzeta individual acabada de fer des de 3,00 € o encarregar les teves pizzes grans per WhatsApp.',
+          ],
+        },
+        {
+          heading: '5 Stickers = 1 Pizza Gran Gratis i Promo 5+1 en Pizzetes',
+          list: [
+            'Pizzetes individuals des de 3,00 €: paga’n 5 i emporta-te’n 6 del mateix preu.',
+            'Targeta de Stickers en pizzes grans: 1 sticker per cada pizza gran i 1 pizza gratis en ajuntar-ne 5.',
+            `Pack Degustació Familiar: 3 pizzes grans a escollir per ${euros(packPrice)}.`,
+          ],
+        },
+      ],
+      faqs: [
+        {
+          question: 'On sou exactament a Badalona?',
+          answer: `Som al ${street}, 08911 Badalona, a 2 minuts a peu de la Rambla i la platja i a 3 minuts de la parada de Metro L2 Badalona Pompeu Fabra.`,
+        },
+        {
+          question: 'Es pot demanar per endur a la platja o a casa?',
+          answer: 'Sí! Tant les pizzetes individuals com les pizzes grans es lliuren en caixa calenta, ideals per gaudir a la platja, a la Rambla o a casa.',
+        },
+      ],
+      linkLabel: 'Carrer de Mar i Platja',
+      linkBlurb: 'Al centre de Badalona, a 2 min del mar',
+    };
+  }
+
+  return {
+    ...base,
+    metaTitle: 'Pizzería en Carrer de Mar y Playa Badalona | La Piccerella',
+    metaDescription: `Pizzería artesanal en ${street} (Badalona Centro), a 2 min de la Rambla y la playa. Pizzas 48 h, pizzetas desde 3 € y 5 stickers = 1 pizza gratis.`,
+    eyebrow: 'Badalona Centro · Carrer de Mar, 127',
+    h1: 'Pizzería artesanal en Carrer de Mar y cerca de la playa de Badalona',
+    lead: `En pleno paseo peatonal de ${street}, a 2 minutos de la Rambla de Badalona, la Platja dels Pescadors y el metro L2 Badalona Pompeu Fabra.`,
+    itemsHeading: 'Las más pedidas en el centro de Badalona',
+    sections: [
+      {
+        heading: 'A dos pasos de la Rambla y la playa de Badalona',
+        paragraphs: [
+          `Nuestro obrador está en ${street} (08911 Badalona), en el corazón peatonal del barrio del Centro y muy cerca de Casagemes, Dalt de la Vila y el Pont del Petroli.`,
+          'Tanto si paseas por Carrer de Mar como si subes de la playa, puedes llevarte una pizzeta individual recién horneada desde 3,00 € o encargar tus pizzas grandes por WhatsApp sin esperas.',
+        ],
+      },
+      {
+        heading: '5 Stickers = 1 Pizza Grande Gratis y Promo 5+1 en Pizzetas',
+        list: [
+          'Pizzetas individuales desde 3,00 €: paga 5 y llévate 6 del mismo precio.',
+          'Tarjeta de Stickers en pizzas grandes: 1 sticker por cada pizza grande y 1 pizza gratis al juntar 5.',
+          `Pack Degustación Familiar: 3 pizzas grandes a elegir por ${euros(packPrice)}.`,
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: '¿Dónde estáis exactamente en Badalona?',
+        answer: `Estamos en ${street}, 08911 Badalona, a 2 minutos a pie de la Rambla y la playa y a 3 minutos de la parada de Metro L2 Badalona Pompeu Fabra.`,
+      },
+      {
+        question: '¿Se puede pedir para llevar a la playa o a casa?',
+        answer: '¡Sí! Tanto las pizzetas individuales como las pizzas grandes se entregan recién salidas del horno, ideales para disfrutar en el paseo marítimo, la playa o en casa.',
+      },
+    ],
+    linkLabel: 'Carrer de Mar y Playa',
+    linkBlurb: 'En el centro de Badalona, a 2 min del mar',
+  };
+}
+
 export function getLanding(id: LandingId, locale: Locale): LandingContent {
+  if (id === 'pizzetas') return pizzetas(locale);
   if (id === 'para-llevar') return paraLlevar(locale);
-  if (id === 'pack') return pack(locale);
-  return empanadas(locale);
+  if (id === 'mayoreo') return mayoreo(locale);
+  if (id === 'centro-playa') return centroPlaya(locale);
+  return pack(locale);
 }
 
 /** Names of every whole pizza, for the pack page */

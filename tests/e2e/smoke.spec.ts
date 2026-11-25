@@ -137,22 +137,143 @@ test.describe('La Piccerella E2E Smoke, Reduced Motion, NAP & Accessibility', ()
     expect(esHtml).toContain('<html lang="es"');
   });
 
+  test('pizzeta promo: the sixth is free in the basket and in the WhatsApp order', async ({
+    page,
+  }) => {
+    await page.goto('/es');
+
+    // The hero advertises it and the section sits right under the hero
+    await expect(page.getByTestId('hero-pizzeta-promo')).toContainText('paga 5, llévate 6');
+    const section = page.locator('#pizzetas');
+    await expect(section.locator('[data-testid^="pizzeta-card-"]')).toHaveCount(6);
+
+    // Five pizzetas of 3 €: nothing free yet, one to go
+    await page.getByTestId('pizzeta-add-pizzeta-pepperoni').click();
+    const plus = section
+      .getByTestId('pizzeta-card-pizzeta-pepperoni')
+      .getByRole('button', { name: /Añadir otra/ });
+    for (let i = 0; i < 2; i++) await plus.click();
+    await page.getByTestId('pizzeta-add-pizzeta-margarita').click();
+    await section
+      .getByTestId('pizzeta-card-pizzeta-margarita')
+      .getByRole('button', { name: /Añadir otra/ })
+      .click();
+    await expect(section.getByTestId('pizzeta-promo-meter')).toContainText('Añade 1 pizzeta');
+    await expect(section.getByTestId('pizzetas-open-basket')).toContainText('15,00 €');
+
+    // The sixth one is free: still 15 €
+    await plus.click();
+    await expect(section.getByTestId('pizzeta-qty-pizzeta-pepperoni')).toHaveText('4');
+    await expect(section.getByTestId('pizzeta-promo-won')).toContainText('1 pizzeta gratis');
+    await expect(section.getByTestId('pizzetas-open-basket')).toContainText('15,00 €');
+
+    await section.getByTestId('pizzetas-open-basket').click();
+    await expect(page.getByTestId('basket-subtotal')).toHaveText('18,00 €');
+    await expect(page.getByTestId('basket-discount')).toContainText('3,00 €');
+    await expect(page.getByTestId('basket-total')).toHaveText('15,00 €');
+
+    await page.getByTestId('checkout-name-input').fill('Ana');
+    await page.getByTestId('submit-whatsapp-order').click();
+    const href = await page.getByTestId('whatsapp-fallback-link').getAttribute('href');
+    const text = decodeURIComponent(href!.split('?text=')[1] ?? '');
+    expect(text).toContain('• 4 x Pizzeta Pepperoni — 12,00 €');
+    expect(text).toContain('• Promo pizzetas 5+1 (1 gratis) — -3,00 €');
+    expect(text).toContain('Total: 15,00 €');
+  });
+
+  test('pizzeta clip: only the poster loads up front, it is muted, and it can be paused', async ({
+    page,
+  }) => {
+    const videoRequests: string[] = [];
+    page.on('request', (req) => {
+      if (/\.(mp4|webm)(\?|$)/.test(req.url())) videoRequests.push(req.url());
+    });
+
+    await page.goto('/es', { waitUntil: 'networkidle' });
+    // Nothing heavy is fetched while the clip is still below the fold
+    expect(videoRequests).toHaveLength(0);
+
+    const video = page.locator('#pizzetas video:visible');
+    await expect(video).toHaveCount(1);
+    await expect(video).toHaveAttribute('poster', /pizzetas-gustavo-poster\.webp/);
+    await expect(video).toHaveAttribute('aria-label', /Gustavo/);
+    expect(await video.evaluate((el: HTMLVideoElement) => el.muted && el.loop)).toBe(true);
+
+    // Real photos replace the renders where the shop's video shows the pizzeta
+    await expect(
+      page.locator('#pizzetas [data-testid="pizzeta-card-pizzeta-pepperoni"] img')
+    ).toHaveAttribute('src', '/images/pizzetas/pepperoni.webp');
+
+    // Scrolled into view it starts by itself, and the button pauses it
+    await video.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => video.evaluate((el: HTMLVideoElement) => !el.paused), { timeout: 8000 })
+      .toBe(true);
+    expect(videoRequests.length).toBeGreaterThan(0);
+
+    const toggle = page.locator('#pizzetas [data-testid="loop-video-toggle"]:visible');
+    await toggle.click();
+    await expect
+      .poll(() => video.evaluate((el: HTMLVideoElement) => el.paused))
+      .toBe(true);
+    await expect(toggle).toHaveAttribute('aria-label', 'Reproducir el vídeo');
+  });
+
+  test('process steps and the founder clip are lazy, silent videos with a real poster', async ({
+    page,
+    request,
+  }) => {
+    await page.goto('/es');
+
+    const steps = page.locator('#proceso [data-testid^="process-step-"]');
+    await expect(steps).toHaveCount(4);
+    for (let i = 0; i < 4; i++) {
+      const video = steps.nth(i).locator('video');
+      await expect(video).toHaveAttribute('preload', 'none');
+      expect(await video.evaluate((el: HTMLVideoElement) => el.muted)).toBe(true);
+      const poster = await video.getAttribute('poster');
+      expect((await request.get(poster!)).ok()).toBe(true);
+    }
+    await expect(steps.first()).toContainText('Estiramos la masa a mano');
+
+    const founder = page.locator('#historia video');
+    await expect(founder).toHaveAttribute('aria-label', /Gustavo/);
+    expect((await request.get('/videos/gustavo-ventana.mp4')).ok()).toBe(true);
+  });
+
+  test('pizzetas have their own page and lead the full menu', async ({ page }) => {
+    await page.goto('/es/pizzetas-badalona');
+    await expect(page.locator('h1')).toHaveText('Pizzetas en Badalona desde 3,00 €');
+    await expect(page.locator('#productos [data-testid^="menu-item-"]')).toHaveCount(6);
+    await expect(page.locator('main')).toContainText('Paga 5 y llévate 6');
+
+    await page.goto('/ca/pizzetes-badalona');
+    await expect(page.locator('h1')).toHaveText('Pizzetes a Badalona des de 3,00 €');
+
+    // First section of the full menu, with the pack in a section of its own
+    await page.goto('/es/carta');
+    const sections = page.locator('[id^="categoria-"]');
+    await expect(sections.first()).toHaveAttribute('id', 'categoria-pizzetas');
+    await expect(page.locator('#categoria-pizzetas [data-testid^="menu-item-"]')).toHaveCount(6);
+    await expect(page.locator('#categoria-packs [data-testid^="menu-item-"]')).toHaveCount(1);
+  });
+
   test('focused pages exist in both languages, with their own address and an order button', async ({
     page,
   }) => {
-    await page.goto('/es/empanadas-argentinas-badalona');
-    await expect(page.locator('h1')).toHaveText('Empanadas argentinas en Badalona');
+    await page.goto('/es/pizzetas-badalona');
+    await expect(page.locator('h1')).toHaveText('Pizzetas en Badalona desde 3,00 €');
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       'href',
-      'https://lapiccerella.es/es/empanadas-argentinas-badalona'
+      'https://lapiccerella.es/es/pizzetas-badalona'
     );
     await expect(
       page.locator('link[rel="alternate"][hreflang="ca-ES"]')
-    ).toHaveAttribute('href', 'https://lapiccerella.es/ca/empanades-argentines-badalona');
-    await expect(page.locator('#productos [data-testid^="menu-item-"]')).toHaveCount(5);
+    ).toHaveAttribute('href', 'https://lapiccerella.es/ca/pizzetes-badalona');
+    await expect(page.locator('#productos [data-testid^="menu-item-"]')).toHaveCount(6);
 
     // Ordering works straight from the page
-    await page.getByTestId('add-to-order-empanada-carne').click();
+    await page.getByTestId('add-to-order-pizzeta-margarita').click();
     await expect(page.getByTestId('navbar-basket-count')).toHaveText('1');
 
     await page.goto('/ca/pizza-per-emportar-badalona');

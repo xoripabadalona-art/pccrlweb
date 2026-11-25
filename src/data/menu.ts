@@ -1,4 +1,4 @@
-export type MenuCategoryId = 'pizzas' | 'pizzetas' | 'empanadas' | 'bebidas';
+export type MenuCategoryId = 'pizzetas' | 'pizzas' | 'packs' | 'bebidas';
 
 export interface MenuSizeOption {
   id: string;
@@ -72,27 +72,27 @@ export interface MenuCategory {
 
 export const menuCategories: MenuCategory[] = [
   {
+    id: 'pizzetas',
+    label: { es: 'Pizzetas', ca: 'Pizzetes' },
+    description: {
+      es: 'Individuales y hechas al momento, desde 3,00 €. Promo: paga 5 y llévate 6 del mismo precio.',
+      ca: 'Individuals i fetes al moment, des de 3,00 €. Promo: paga’n 5 i emporta-te’n 6 del mateix preu.',
+    },
+  },
+  {
     id: 'pizzas',
     label: { es: 'Pizzas', ca: 'Pizzes' },
     description: {
-      es: 'Masa artesanal con 48 horas de fermentación lenta, estirada al momento.',
-      ca: 'Massa artesanal amb 48 hores de fermentació lenta, estirada al moment.',
+      es: 'Masa artesanal con 48 horas de fermentación lenta. Promo Stickers: por cada pizza grande te llevas 1 sticker y con 5 stickers tienes 1 pizza gratis.',
+      ca: 'Massa artesanal amb 48 hores de fermentació lenta. Promo Stickers: per cada pizza gran et portes 1 sticker i amb 5 stickers tens 1 pizza gratis.',
     },
   },
   {
-    id: 'pizzetas',
-    label: { es: 'Pizzetas y Packs', ca: 'Pizzetes i Packs' },
+    id: 'packs',
+    label: { es: 'Packs', ca: 'Packs' },
     description: {
-      es: 'Porciones individuales hechas al momento y pack degustación familiar.',
-      ca: 'Porcions individuals fetes al moment i pack degustació familiar.',
-    },
-  },
-  {
-    id: 'empanadas',
-    label: { es: 'Empanadas', ca: 'Empanades' },
-    description: {
-      es: 'Receta tradicional estilo argentino. 1 unidad 3,00 € · 6 uds 15,00 € · 12 uds 30,00 €.',
-      ca: 'Recepta tradicional estil argentí. 1 unitat 3,00 € · 6 uts 15,00 € · 12 uts 30,00 €.',
+      es: 'Para compartir: pizzas grandes a elección a precio cerrado.',
+      ca: 'Per compartir: pizzes grans a triar a preu tancat.',
     },
   },
   {
@@ -129,8 +129,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-pepperoni.webp',
     pizza3d: {
       slug: 'pepperoni',
-      image3d: '/images/pizzas-3d/pizza-pepperoni.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-pepperoni.webp',
+      image3d: '/images/pizzas-3d/pizza-pepperoni-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-pepperoni-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Pepperoni crujiente', ca: 'Pepperoni cruixent' },
@@ -172,8 +172,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-margarita.webp',
     pizza3d: {
       slug: 'margarita',
-      image3d: '/images/pizzas-3d/pizza-margarita.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-margarita.webp',
+      image3d: '/images/pizzas-3d/pizza-margarita-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-margarita-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Aceite de oliva', ca: "Oli d'oliva" },
@@ -215,8 +215,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-prosciutto-funghi.webp',
     pizza3d: {
       slug: 'prosciutto-funghi',
-      image3d: '/images/pizzas-3d/pizza-prosciutto-funghi.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-prosciutto-funghi.webp',
+      image3d: '/images/pizzas-3d/pizza-prosciutto-funghi-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-prosciutto-funghi-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Champiñón fresco', ca: 'Xampinyó fresc' },
@@ -253,8 +253,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-prosciutto.webp',
     pizza3d: {
       slug: 'prosciutto',
-      image3d: '/images/pizzas-3d/pizza-prosciutto.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-prosciutto.webp',
+      image3d: '/images/pizzas-3d/pizza-prosciutto-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-prosciutto-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Jamón dulce', ca: 'Pernil dolç' },
@@ -291,8 +291,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-carbonara.webp',
     pizza3d: {
       slug: 'carbonara',
-      image3d: '/images/pizzas-3d/pizza-carbonara.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-carbonara.webp',
+      image3d: '/images/pizzas-3d/pizza-carbonara-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-carbonara-v2.webp',
       sauceType: 'white',
       calloutTopLeft: {
         title: { es: 'Bacon y Huevo', ca: 'Bacó i Ou' },
@@ -329,8 +329,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-4-quesos.webp',
     pizza3d: {
       slug: '4-quesos',
-      image3d: '/images/pizzas-3d/pizza-4-quesos.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-4-quesos.webp',
+      image3d: '/images/pizzas-3d/pizza-4-quesos-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-4-quesos-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Cabra y Queso Azul', ca: 'Cabra i Formatge Blau' },
@@ -371,8 +371,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-4-estaciones.webp',
     pizza3d: {
       slug: '4-estaciones',
-      image3d: '/images/pizzas-3d/pizza-4-estaciones.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-4-estaciones.webp',
+      image3d: '/images/pizzas-3d/pizza-4-estaciones-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-4-estaciones-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Jamón y Champiñones', ca: 'Pernil i Xampinyons' },
@@ -413,8 +413,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-barbacoa.webp',
     pizza3d: {
       slug: 'barbacoa',
-      image3d: '/images/pizzas-3d/pizza-barbacoa.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-barbacoa.webp',
+      image3d: '/images/pizzas-3d/pizza-barbacoa-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-barbacoa-v2.webp',
       sauceType: 'white',
       calloutTopLeft: {
         title: { es: 'Carne, Pollo y Bacon', ca: 'Carn, Pollastre i Bacó' },
@@ -451,8 +451,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-mexicana.webp',
     pizza3d: {
       slug: 'mexicana',
-      image3d: '/images/pizzas-3d/pizza-mexicana.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-mexicana.webp',
+      image3d: '/images/pizzas-3d/pizza-mexicana-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-mexicana-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Carne, Pollo y Bacon', ca: 'Carn, Pollastre i Bacó' },
@@ -493,8 +493,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-pollo.webp',
     pizza3d: {
       slug: 'pollo',
-      image3d: '/images/pizzas-3d/pizza-pollo.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-pollo.webp',
+      image3d: '/images/pizzas-3d/pizza-pollo-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-pollo-v2.webp',
       sauceType: 'white',
       calloutTopLeft: {
         title: { es: 'Pollo, Setas y Parmesano', ca: 'Pollastre, Bolets i Parmesà' },
@@ -531,8 +531,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-mallorquina.webp',
     pizza3d: {
       slug: 'mallorquina',
-      image3d: '/images/pizzas-3d/pizza-mallorquina.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-mallorquina.webp',
+      image3d: '/images/pizzas-3d/pizza-mallorquina-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-mallorquina-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Sobrasada y Miel', ca: 'Sobrassada i Mel' },
@@ -569,8 +569,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-bacon.webp',
     pizza3d: {
       slug: 'bacon',
-      image3d: '/images/pizzas-3d/pizza-bacon.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-bacon.webp',
+      image3d: '/images/pizzas-3d/pizza-bacon-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-bacon-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Bacon crujiente', ca: 'Bacó cruixent' },
@@ -607,8 +607,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-atun.webp',
     pizza3d: {
       slug: 'atun',
-      image3d: '/images/pizzas-3d/pizza-atun.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-atun.webp',
+      image3d: '/images/pizzas-3d/pizza-atun-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-atun-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Atún y Olivas negras', ca: 'Tonyina i Olives negres' },
@@ -645,8 +645,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-vegetal.webp',
     pizza3d: {
       slug: 'vegetal',
-      image3d: '/images/pizzas-3d/pizza-vegetal.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-vegetal.webp',
+      image3d: '/images/pizzas-3d/pizza-vegetal-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-vegetal-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Cherry y Calabacín', ca: 'Cherry i Carbassó' },
@@ -683,8 +683,8 @@ export const menuItems: MenuItem[] = [
     image: '/images/menu/pizza-prosciutto-olivas.webp',
     pizza3d: {
       slug: 'prosciutto-olivas',
-      image3d: '/images/pizzas-3d/pizza-prosciutto-olivas.webp',
-      floatingToppings3d: '/images/pizzas-3d/toppings-prosciutto-olivas.webp',
+      image3d: '/images/pizzas-3d/pizza-prosciutto-olivas-v2.webp',
+      floatingToppings3d: '/images/pizzas-3d/toppings-prosciutto-olivas-v2.webp',
       sauceType: 'tomato',
       calloutTopLeft: {
         title: { es: 'Jamón y Olivas negras', ca: 'Pernil i Olives negres' },
@@ -705,7 +705,8 @@ export const menuItems: MenuItem[] = [
     placeholder: false,
   },
 
-  // ─── PIZZETAS Y PACKS ─────────────────────────────────────────────────────
+  // ─── PIZZETAS ─────────────────────────────────────────────────────────────
+  // The same six flavours the whole pizzas offer in pizzeta size, at the same prices.
   {
     id: 'pizzeta-margarita',
     category: 'pizzetas',
@@ -720,7 +721,7 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: true,
-    image: '/images/menu/pizza-margarita.webp',
+    image: '/images/pizzas-3d/pizzeta-margarita-v2.webp',
     placeholder: false,
   },
   {
@@ -737,12 +738,80 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: false,
-    image: '/images/menu/pizza-pepperoni.webp',
+    image: '/images/pizzas-3d/pizzeta-pepperoni-v2.webp',
+    placeholder: false,
+  },
+  {
+    id: 'pizzeta-prosciutto-funghi',
+    category: 'pizzetas',
+    name: { es: 'Pizzeta Prosciutto e Funghi', ca: 'Pizzeta Prosciutto e Funghi' },
+    ingredients: {
+      es: 'Pizzeta artesanal con salsa de tomate, mozzarella, jamón dulce y champiñones',
+      ca: 'Pizzeta artesanal amb salsa de tomàquet, mozzarella, pernil dolç i xampinyons',
+    },
+    priceCents: 500,
+    allergens: {
+      es: ['Gluten', 'Lácteos'],
+      ca: ['Gluten', 'Làctics'],
+    },
+    vegetarian: false,
+    image: '/images/pizzas-3d/pizzeta-prosciutto-funghi-v2.webp',
+    placeholder: false,
+  },
+  {
+    id: 'pizzeta-prosciutto',
+    category: 'pizzetas',
+    name: { es: 'Pizzeta Prosciutto', ca: 'Pizzeta Prosciutto' },
+    ingredients: {
+      es: 'Pizzeta artesanal con salsa de tomate, mozzarella y jamón dulce',
+      ca: 'Pizzeta artesanal amb salsa de tomàquet, mozzarella i pernil dolç',
+    },
+    priceCents: 500,
+    allergens: {
+      es: ['Gluten', 'Lácteos'],
+      ca: ['Gluten', 'Làctics'],
+    },
+    vegetarian: false,
+    image: '/images/pizzas-3d/pizzeta-prosciutto-v2.webp',
+    placeholder: false,
+  },
+  {
+    id: 'pizzeta-barbacoa',
+    category: 'pizzetas',
+    name: { es: 'Pizzeta Barbacoa', ca: 'Pizzeta Barbacoa' },
+    ingredients: {
+      es: 'Pizzeta artesanal con base blanca, mozzarella, bacon, carne molida, pollo y salsa barbacoa',
+      ca: 'Pizzeta artesanal amb base blanca, mozzarella, bacó, carn picada, pollastre i salsa barbacoa',
+    },
+    priceCents: 500,
+    allergens: {
+      es: ['Gluten', 'Lácteos'],
+      ca: ['Gluten', 'Làctics'],
+    },
+    vegetarian: false,
+    image: '/images/pizzas-3d/pizzeta-barbacoa-v2.webp',
+    placeholder: false,
+  },
+  {
+    id: 'pizzeta-mexicana',
+    category: 'pizzetas',
+    name: { es: 'Pizzeta Mexicana', ca: 'Pizzeta Mexicana' },
+    ingredients: {
+      es: 'Pizzeta artesanal con salsa de tomate, mozzarella, bacon, carne molida, pollo, maíz y salsa picante',
+      ca: 'Pizzeta artesanal amb salsa de tomàquet, mozzarella, bacó, carn picada, pollastre, blat de moro i salsa picant',
+    },
+    priceCents: 500,
+    allergens: {
+      es: ['Gluten', 'Lácteos'],
+      ca: ['Gluten', 'Làctics'],
+    },
+    vegetarian: false,
+    image: '/images/pizzas-3d/pizzeta-mexicana-v2.webp',
     placeholder: false,
   },
   {
     id: 'pack-degustacion-familiar',
-    category: 'pizzetas',
+    category: 'packs',
     name: {
       es: 'Pack Degustación Familiar (3 Pizzas Grandes)',
       ca: 'Pack Degustació Familiar (3 Pizzes Grans)',
@@ -757,122 +826,7 @@ export const menuItems: MenuItem[] = [
       ca: ['Gluten', 'Làctics'],
     },
     vegetarian: false,
-    image: '/images/menu/action-box-stamp.webp',
-    placeholder: false,
-  },
-
-  // ─── EMPANADAS ────────────────────────────────────────────────────────────
-  {
-    id: 'empanada-carne',
-    category: 'empanadas',
-    name: {
-      es: 'Empanada de Carne cortada a cuchillo',
-      ca: 'Empanada de Carn tallada a ganivet',
-    },
-    ingredients: {
-      es: 'Ternera cortada a cuchillo, cebolla blanca, cebolla verde, huevo duro y especias',
-      ca: 'Vedella tallada a ganivet, ceba blanca, ceba tendra, ou dur i espècies',
-    },
-    priceCents: 300,
-    sizes: [
-      { id: '1-ud', label: { es: '1 unidad', ca: '1 unitat' }, priceCents: 300 },
-      { id: '6-uds', label: { es: 'Media docena (6 uds)', ca: 'Mitja dotzena (6 uts)' }, priceCents: 1500 },
-      { id: '12-uds', label: { es: 'Docena (12 uds)', ca: 'Dotzena (12 uts)' }, priceCents: 3000 },
-    ],
-    allergens: {
-      es: ['Gluten', 'Huevo'],
-      ca: ['Gluten', 'Ou'],
-    },
-    vegetarian: false,
-    image: '/images/menu/empanada-carne.png',
-    placeholder: false,
-  },
-  {
-    id: 'empanada-jamon-queso',
-    category: 'empanadas',
-    name: { es: 'Empanada de Jamón y Queso', ca: 'Empanada de Pernil i Formatge' },
-    ingredients: {
-      es: 'Jamón dulce y mozzarella italiana',
-      ca: 'Pernil dolç i mozzarella italiana',
-    },
-    priceCents: 300,
-    sizes: [
-      { id: '1-ud', label: { es: '1 unidad', ca: '1 unitat' }, priceCents: 300 },
-      { id: '6-uds', label: { es: 'Media docena (6 uds)', ca: 'Mitja dotzena (6 uts)' }, priceCents: 1500 },
-      { id: '12-uds', label: { es: 'Docena (12 uds)', ca: 'Dotzena (12 uts)' }, priceCents: 3000 },
-    ],
-    allergens: {
-      es: ['Gluten', 'Lácteos'],
-      ca: ['Gluten', 'Làctics'],
-    },
-    vegetarian: false,
-    image: '/images/menu/empanada-jamon-queso.png',
-    placeholder: false,
-  },
-  {
-    id: 'empanada-pollo',
-    category: 'empanadas',
-    name: { es: 'Empanada de Pollo', ca: 'Empanada de Pollastre' },
-    ingredients: {
-      es: 'Pollo, cebolla blanca, cebolla verde, huevo duro y especias',
-      ca: 'Pollastre, ceba blanca, ceba tendra, ou dur i espècies',
-    },
-    priceCents: 300,
-    sizes: [
-      { id: '1-ud', label: { es: '1 unidad', ca: '1 unitat' }, priceCents: 300 },
-      { id: '6-uds', label: { es: 'Media docena (6 uds)', ca: 'Mitja dotzena (6 uts)' }, priceCents: 1500 },
-      { id: '12-uds', label: { es: 'Docena (12 uds)', ca: 'Dotzena (12 uts)' }, priceCents: 3000 },
-    ],
-    allergens: {
-      es: ['Gluten', 'Huevo'],
-      ca: ['Gluten', 'Ou'],
-    },
-    vegetarian: false,
-    image: '/images/menu/empanada-pollo.png',
-    placeholder: false,
-  },
-  {
-    id: 'empanada-cuatro-quesos',
-    category: 'empanadas',
-    name: { es: 'Empanada Cuatro Quesos', ca: 'Empanada Quatre Formatges' },
-    ingredients: {
-      es: 'Queso de cabra, queso azul, mozzarella, emmental y nuez moscada',
-      ca: 'Formatge de cabra, formatge blau, mozzarella, emmental i nou moscada',
-    },
-    priceCents: 300,
-    sizes: [
-      { id: '1-ud', label: { es: '1 unidad', ca: '1 unitat' }, priceCents: 300 },
-      { id: '6-uds', label: { es: 'Media docena (6 uds)', ca: 'Mitja dotzena (6 uts)' }, priceCents: 1500 },
-      { id: '12-uds', label: { es: 'Docena (12 uds)', ca: 'Dotzena (12 uts)' }, priceCents: 3000 },
-    ],
-    allergens: {
-      es: ['Gluten', 'Lácteos'],
-      ca: ['Gluten', 'Làctics'],
-    },
-    vegetarian: true,
-    image: '/images/menu/empanada-cuatro-quesos.png',
-    placeholder: false,
-  },
-  {
-    id: 'empanada-queso-cebolla',
-    category: 'empanadas',
-    name: { es: 'Empanada de Queso y Cebolla', ca: 'Empanada de Formatge i Ceba' },
-    ingredients: {
-      es: 'Cebolla caramelizada, mozzarella italiana y especias',
-      ca: 'Ceba caramel·litzada, mozzarella italiana i espècies',
-    },
-    priceCents: 300,
-    sizes: [
-      { id: '1-ud', label: { es: '1 unidad', ca: '1 unitat' }, priceCents: 300 },
-      { id: '6-uds', label: { es: 'Media docena (6 uds)', ca: 'Mitja dotzena (6 uts)' }, priceCents: 1500 },
-      { id: '12-uds', label: { es: 'Docena (12 uds)', ca: 'Dotzena (12 uts)' }, priceCents: 3000 },
-    ],
-    allergens: {
-      es: ['Gluten', 'Lácteos'],
-      ca: ['Gluten', 'Làctics'],
-    },
-    vegetarian: true,
-    image: '/images/menu/empanada-queso-cebolla.png',
+    image: '/images/menu/pack-3-pizzas.webp',
     placeholder: false,
   },
 
@@ -885,7 +839,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/menu/bebida-coca-cola.png',
+    image: '/images/menu/bebida-coca-cola.webp',
     placeholder: false,
   },
   {
@@ -896,7 +850,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/menu/bebida-coca-cola-zero.png',
+    image: '/images/menu/bebida-coca-cola-zero.webp',
     placeholder: false,
   },
   {
@@ -907,7 +861,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/menu/bebida-fanta-naranja.png',
+    image: '/images/menu/bebida-fanta-naranja.webp',
     placeholder: false,
   },
   {
@@ -918,7 +872,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/menu/bebida-aquarius-limon.png',
+    image: '/images/menu/bebida-aquarius-limon.webp',
     placeholder: false,
   },
   {
@@ -929,7 +883,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/menu/bebida-sprite.png',
+    image: '/images/menu/bebida-sprite.webp',
     placeholder: false,
   },
   {
@@ -940,7 +894,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/menu/bebida-fuze-tea.png',
+    image: '/images/menu/bebida-fuze-tea.webp',
     placeholder: false,
   },
   {
@@ -951,7 +905,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/menu/bebida-agua-sin-gas.png',
+    image: '/images/menu/bebida-agua-sin-gas.webp',
     placeholder: false,
   },
   {
@@ -962,7 +916,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 200,
     allergens: { es: [], ca: [] },
     vegetarian: true,
-    image: '/images/menu/bebida-agua-con-gas.png',
+    image: '/images/menu/bebida-agua-con-gas.webp',
     placeholder: false,
   },
   {
@@ -979,7 +933,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 250,
     allergens: { es: ['Gluten'], ca: ['Gluten'] },
     vegetarian: true,
-    image: '/images/menu/cerveza-estrella-tirador.png',
+    image: '/images/menu/cerveza-estrella-tirador.webp',
     placeholder: false,
   },
   {
@@ -990,7 +944,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 250,
     allergens: { es: ['Gluten'], ca: ['Gluten'] },
     vegetarian: true,
-    image: '/images/menu/cerveza-1906-tirador.png',
+    image: '/images/menu/cerveza-1906-tirador.webp',
     placeholder: false,
   },
   {
@@ -1001,7 +955,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 250,
     allergens: { es: ['Gluten'], ca: ['Gluten'] },
     vegetarian: true,
-    image: '/images/menu/cerveza-estrella-lata.png',
+    image: '/images/menu/cerveza-estrella-lata.webp',
     placeholder: false,
   },
   {
@@ -1015,7 +969,7 @@ export const menuItems: MenuItem[] = [
     priceCents: 250,
     allergens: { es: ['Gluten'], ca: ['Gluten'] },
     vegetarian: true,
-    image: '/images/menu/cerveza-estrella-sin-alcohol.png',
+    image: '/images/menu/cerveza-estrella-sin-alcohol.webp',
     placeholder: false,
   },
 ];
@@ -1037,6 +991,10 @@ export function getInteractive3dPizzas(): (MenuItem & { pizza3d: Pizza3dConfig }
 const PIZZETA_3D_SLUGS: Record<string, string> = {
   'pizzeta-margarita': 'margarita',
   'pizzeta-pepperoni': 'pepperoni',
+  'pizzeta-prosciutto-funghi': 'prosciutto-funghi',
+  'pizzeta-prosciutto': 'prosciutto',
+  'pizzeta-barbacoa': 'barbacoa',
+  'pizzeta-mexicana': 'mexicana',
 };
 
 /**
@@ -1044,7 +1002,10 @@ const PIZZETA_3D_SLUGS: Record<string, string> = {
  * static images (no scroll animation), so the whole menu can use them cheaply.
  */
 export function getMenuItem3dImage(item: MenuItem): string | undefined {
-  const slug = item.pizza3d?.slug ?? PIZZETA_3D_SLUGS[item.id];
+  if (PIZZETA_3D_SLUGS[item.id]) {
+    return `/images/pizzas-3d/pizzeta-${PIZZETA_3D_SLUGS[item.id]}-v2.webp`;
+  }
+  const slug = item.pizza3d?.slug;
   return slug ? `/images/pizzas-3d/pizza-${slug}-v2.webp` : undefined;
 }
 
@@ -1067,12 +1028,31 @@ export const HOME_HIGHLIGHT_IDS = [
   'pizza-4-quesos',
   'pizza-barbacoa',
   'pizza-carbonara',
+  'pizza-prosciutto-funghi',
   'pack-degustacion-familiar',
-  'empanada-carne',
 ];
 
 export function getHomeHighlights(): MenuItem[] {
   return HOME_HIGHLIGHT_IDS.map((id) => getMenuItemById(id)).filter(
     (item): item is MenuItem => Boolean(item)
   );
+}
+
+/** The pizzeta range, cheapest first */
+export function getPizzetas(): MenuItem[] {
+  return menuItems
+    .filter((item) => item.category === 'pizzetas')
+    .sort((a, b) => a.priceCents - b.priceCents);
+}
+
+/** The 15 large 32cm pizzas */
+export function getLargePizzas(): MenuItem[] {
+  return menuItems.filter((item) => item.category === 'pizzas');
+}
+
+/** Real photos of the dish (stills from the shop's own video), where one exists */
+const REAL_PHOTOS: Record<string, string> = {};
+
+export function getMenuItemRealPhoto(item: MenuItem): string | undefined {
+  return REAL_PHOTOS[item.id];
 }

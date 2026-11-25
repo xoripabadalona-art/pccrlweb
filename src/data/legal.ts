@@ -39,6 +39,7 @@ const domain = siteUrl.replace(/^https?:\/\//, '');
 
 const hasPlausible = Boolean(process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN);
 const hasGa4 = Boolean(process.env.NEXT_PUBLIC_GA4_ID);
+const hasClarity = Boolean(process.env.NEXT_PUBLIC_CLARITY_ID);
 const hasGoogleReviews = Boolean(site.googleReviews.apiKey && site.googleReviews.placeId);
 
 /** True while the owner's identity is incomplete — the pages say so plainly. */
@@ -228,6 +229,11 @@ function privacidad(locale: Locale): LegalDoc {
         "Google Ireland Ltd. (Google Analytics 4): només si acceptes l'analítica al bàner de consentiment."
       );
     }
+    if (hasClarity) {
+      recipients.push(
+        "Microsoft Ireland Operations Ltd. (Microsoft Clarity): només si acceptes l'analítica al bàner de consentiment, per entendre com es navega per la web de forma agregada."
+      );
+    }
     if (hasPlausible) {
       recipients.push(
         'Plausible Analytics: estadístiques de visites agregades, sense galetes ni dades que t’identifiquin.'
@@ -315,6 +321,11 @@ function privacidad(locale: Locale): LegalDoc {
   if (hasGa4) {
     recipients.push(
       'Google Ireland Ltd. (Google Analytics 4): solo si aceptas la analítica en el aviso de consentimiento.'
+    );
+  }
+  if (hasClarity) {
+    recipients.push(
+      'Microsoft Ireland Operations Ltd. (Microsoft Clarity): solo si aceptas la analítica en el aviso de consentimiento, para entender cómo se navega por la web de forma agregada.'
     );
   }
   if (hasPlausible) {
@@ -405,7 +416,7 @@ function cookies(locale: Locale): LegalDoc {
           "Emmagatzematge local. Desa la comanda que estàs preparant perquè no es perdi si recarregues la pàgina. Es manté fins que buides la comanda o esborres les dades del lloc.",
       },
     ];
-    if (hasGa4) {
+    if (hasGa4 || hasClarity) {
       storage.push({
         label: 'la-piccerella-ga-consent',
         value:
@@ -417,6 +428,11 @@ function cookies(locale: Locale): LegalDoc {
     if (hasGa4) {
       analytics.push(
         "Google Analytics 4 només es carrega si acceptes l'analítica. En aquest cas Google instal·la les galetes _ga i _ga_<ID>, que duren fins a 2 anys i serveixen per comptar visites de forma agregada. Si la rebutges, no es carrega res."
+      );
+    }
+    if (hasClarity) {
+      analytics.push(
+        "Microsoft Clarity només es carrega si acceptes l'analítica. Instal·la les galetes _clck (fins a 1 any) i _clsk (1 dia) per generar mapes de calor i estadístiques d'ús agregades. Si la rebutges, no es carrega res."
       );
     }
     if (hasPlausible) {
@@ -474,7 +490,7 @@ function cookies(locale: Locale): LegalDoc {
         'Almacenamiento local. Guarda el pedido que estás preparando para que no se pierda si recargas la página. Se mantiene hasta que vacías el pedido o borras los datos del sitio.',
     },
   ];
-  if (hasGa4) {
+  if (hasGa4 || hasClarity) {
     storage.push({
       label: 'la-piccerella-ga-consent',
       value:
@@ -486,6 +502,11 @@ function cookies(locale: Locale): LegalDoc {
   if (hasGa4) {
     analytics.push(
       'Google Analytics 4 solo se carga si aceptas la analítica. En ese caso Google instala las cookies _ga y _ga_<ID>, que duran hasta 2 años y sirven para contar visitas de forma agregada. Si la rechazas, no se carga nada.'
+    );
+  }
+  if (hasClarity) {
+    analytics.push(
+      'Microsoft Clarity solo se carga si aceptas la analítica. Instala las cookies _clck (hasta 1 año) y _clsk (1 día) para generar mapas de calor y estadísticas de uso agregadas. Si la rechazas, no se carga nada.'
     );
   }
   if (hasPlausible) {

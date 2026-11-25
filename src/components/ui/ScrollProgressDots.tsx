@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 
 const SECTIONS = [
   { id: 'exploded-pizza', label: 'Inicio' },
-  { id: 'especialidades', label: 'Especialidades' },
+  { id: 'pizzetas', label: 'Pizzetas' },
+  { id: 'proceso', label: 'Así la hacemos' },
   { id: 'carta', label: 'Carta' },
   { id: 'historia', label: 'Historia' },
   { id: 'ubicacion', label: 'Ubicación' },

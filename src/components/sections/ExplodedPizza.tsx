@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { getMenuItemById } from '@/data/menu';
+import { getMenuItemById, getPizzetas } from '@/data/menu';
+import { PIZZETA_PROMO } from '@/lib/promo';
 import { getCopy, type Locale } from '@/data/copy';
 import { formatCents } from '@/lib/format';
 import { useBasketStore } from '@/store/basket';
@@ -166,7 +167,6 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
   const outroRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
-  const buildRef = useRef<HTMLDivElement>(null);
   const steamRef = useRef<HTMLDivElement>(null);
   const cloudRef = useRef<HTMLDivElement>(null);
 
@@ -178,9 +178,6 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
 
     let ctx: { revert: () => void } | undefined;
     let removePointer: (() => void) | undefined;
-    let buildTl:
-      | { isActive: () => boolean; progress: (v: number) => unknown; kill: () => void }
-      | undefined;
     let liftTl: { pause: () => unknown; resume: () => unknown; kill: () => void } | undefined;
     let stopTicker: (() => void) | undefined;
     let visibility: IntersectionObserver | undefined;
@@ -208,10 +205,23 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
         const spread = spreadOf(stackRef.current);
 
         // ── Opening pose: one whole pizza, tilted, hovering under the headline
+        // Responsive scale and vertical offset so the floating slice never clips on mobile/tablet
         gsap.set(stackRef.current, {
-          y: () => window.innerHeight * 0.2,
-          scale: 1.42,
-          rotation: -7,
+          y: () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            if (w < 640) return h * 0.165;
+            if (w < 1024) return h * 0.18;
+            return h * 0.2;
+          },
+          scale: () => {
+            const w = window.innerWidth;
+            if (w < 380) return 1.06;
+            if (w < 640) return 1.14;
+            if (w < 1024) return 1.24;
+            return 1.38;
+          },
+          rotation: -6,
         });
         gsap.set(layerEls, { opacity: 0, yPercent: (i) => (i - 1.5) * 2 });
         gsap.set(calloutEls, { autoAlpha: 0 });
@@ -224,134 +234,135 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top top',
-            end: '+=250%',
+            end: '+=280%',
             pin: pinRef.current,
             scrub: 0.6,
             invalidateOnRefresh: true,
-            // Scrolling during the opening animation: skip straight to the baked pizza
-            onUpdate: (st) => {
-              if (st.progress > 0.015 && buildTl?.isActive()) buildTl.progress(1);
-            },
           },
         });
 
         tl.to(progressRef.current, { scaleY: 1, duration: 1 }, 0);
         tl.to(hintRef.current, { autoAlpha: 0, duration: 0.05 }, 0.01);
 
-        // 0 → 0.07: the lifted slice settles back into the pizza
         const baked = q('[data-baked]')[0] as HTMLElement;
-        tl.fromTo(
-          baked,
-          { '--lift-s': 1 },
-          { '--lift-s': 0, ease: 'power1.inOut', duration: 0.07 },
-          0
-        );
 
-        // 0 → 0.16: headline leaves, the pizza levels out and takes centre stage
-        tl.to(introRef.current, { autoAlpha: 0, y: -36, duration: 0.1 }, 0.02);
+        // ── Phase 1 (0.00 → 0.15): Smooth slice descent & pizza levels out center-stage
+        tl.to(
+          baked,
+          { '--lift-s': 0, ease: 'power2.inOut', duration: 0.14 },
+          0.00
+        );
+        tl.to(introRef.current, { autoAlpha: 0, y: -34, duration: 0.11, ease: 'power2.in' }, 0.02);
         tl.to(
           stackRef.current,
           { y: 0, scale: 1, rotation: 0, ease: 'power2.inOut', duration: 0.16 },
-          0
+          0.00
         );
 
-        // 0.125 → 0.175: swap the baked pizza for its separate layers (still stacked)
-        tl.to(layerEls, { opacity: 1, duration: 0.03 }, 0.125);
-        tl.to(assembledRef.current, { opacity: 0, duration: 0.04 }, 0.135);
+        // ── Phase 2 (0.16 → 0.22): Seamless cross-fade from assembled pizza to separate layers
+        tl.to(layerEls, { opacity: 1, duration: 0.04, ease: 'power1.out' }, 0.16);
+        tl.to(assembledRef.current, { opacity: 0, duration: 0.04, ease: 'power1.in' }, 0.17);
 
-        // 0.15 → 0.35: the burst. Almost all the travel happens in the first
-        // few percent of scroll, so it reads as a pop rather than a slow lift.
-        const BURST = 0.15;
+        // ── Phase 3 (0.18 → 0.42): Smooth, elegant explosion of layers
+        const BURST = 0.18;
+        const BURST_DUR = 0.24;
         LAYERS.forEach((layer, i) => {
           tl.to(
             layerEls[i]!,
             {
               yPercent: layer.explodeY * spread,
               rotation: layer.explodeRot,
-              ease: 'expo.out',
-              duration: 0.2,
+              ease: 'power2.out',
+              duration: BURST_DUR,
             },
-            BURST + i * 0.006
+            BURST + i * 0.005
           );
         });
-        tl.to(motion, { explode: 1, ease: 'expo.out', duration: 0.2 }, BURST);
-        tl.to(motion, { spin: 1.15, turn: 0.6, ease: 'power2.out', duration: 0.22 }, BURST);
+        tl.to(motion, { explode: 1, ease: 'power2.out', duration: BURST_DUR }, BURST);
+        tl.to(motion, { spin: 1.15, turn: 0.6, ease: 'power2.out', duration: BURST_DUR }, BURST);
         tl.to(
           shadowRef.current,
-          { yPercent: 150 * spread, scaleX: 0.82, opacity: 0.55, ease: 'expo.out', duration: 0.2 },
+          { yPercent: 140 * spread, scaleX: 0.82, opacity: 0.55, ease: 'power2.out', duration: BURST_DUR },
           BURST
         );
-        tl.to(steamRef.current, { opacity: 0.5, duration: 0.1 }, BURST);
+        tl.to(steamRef.current, { opacity: 0.5, duration: 0.12 }, BURST);
 
-        // 0.3 → 0.52: annotations draw in one by one
+        // ── Phase 4 (0.36 → 0.54): Words & annotations glide in ONCE (no duplication!)
         calloutEls.forEach((el, i) => {
           const fromLeft = el.dataset.callout === 'left';
           const line = el.querySelector('[data-callout-line]');
           tl.fromTo(
             el,
             { autoAlpha: 0, x: fromLeft ? -26 : 26 },
-            { autoAlpha: 1, x: 0, ease: 'power2.out', duration: 0.07 },
-            0.3 + i * 0.05
+            { autoAlpha: 1, x: 0, ease: 'power2.out', duration: 0.08 },
+            0.36 + i * 0.04
           );
           if (line) {
             tl.fromTo(
               line,
               { scaleX: 0 },
-              { scaleX: 1, ease: 'power2.out', duration: 0.07 },
-              0.32 + i * 0.05
+              { scaleX: 1, ease: 'power2.out', duration: 0.08 },
+              0.38 + i * 0.04
             );
           }
         });
         tl.to(
           stampRef.current,
-          { autoAlpha: 1, scale: 1, ease: 'back.out(1.6)', duration: 0.06 },
-          0.5
+          { autoAlpha: 1, scale: 1, ease: 'back.out(1.5)', duration: 0.07 },
+          0.48
         );
 
-        // 0.37 → 0.64: everything keeps turning slowly while it hangs there
-        tl.to(motion, { spin: 1.7, turn: 1, ease: 'none', duration: 0.27 }, 0.37);
+        // Slow continuous 3D rotation while floating
+        tl.to(motion, { spin: 2.1, turn: 1.4, ease: 'none', duration: 0.22 }, 0.40);
 
-        // 0.64 → 0.78: the stack squeezes together, whips round and springs back open
+        // ── Phase 5 (0.58 → 0.82): Ingredients come back together! Reassembly into whole pizza!
         const annotations = [...calloutEls, stampRef.current];
-        tl.to(annotations, { autoAlpha: 0, duration: 0.025 }, 0.635);
+        tl.to(annotations, { autoAlpha: 0, duration: 0.05, ease: 'power2.in' }, 0.58);
+
+        // Layers collapse back together into one unified stack
+        const REJOIN = 0.62;
+        const REJOIN_DUR = 0.18;
         LAYERS.forEach((layer, i) => {
           tl.to(
             layerEls[i]!,
-            { yPercent: layer.explodeY * spread * 0.4, ease: 'power2.in', duration: 0.06 },
-            0.64
-          );
-          tl.to(
-            layerEls[i]!,
-            { yPercent: layer.explodeY * spread, ease: 'back.out(1.8)', duration: 0.08 },
-            0.7
+            {
+              yPercent: 0,
+              rotation: 0,
+              ease: 'power2.inOut',
+              duration: REJOIN_DUR,
+            },
+            REJOIN
           );
         });
-        tl.to(motion, { explode: 0.4, ease: 'power2.in', duration: 0.06 }, 0.64);
-        tl.to(motion, { explode: 1, ease: 'back.out(1.8)', duration: 0.08 }, 0.7);
+        tl.to(motion, { explode: 0, ease: 'power2.inOut', duration: REJOIN_DUR }, REJOIN);
+        tl.to(motion, { spin: 2.8, turn: 2.0, ease: 'power2.inOut', duration: REJOIN_DUR }, REJOIN);
         tl.to(
-          motion,
-          { spin: 1.7 + Math.PI, whip: 1, ease: 'power2.inOut', duration: 0.14 },
-          0.64
+          shadowRef.current,
+          { yPercent: 0, scaleX: 1, opacity: 0.85, ease: 'power2.inOut', duration: REJOIN_DUR },
+          REJOIN
         );
-        tl.to(annotations, { autoAlpha: 1, duration: 0.04 }, 0.775);
 
-        // 0.82 → 1: everything eases up to make room for the order call-to-action
+        // Seamlessly cross-fade back to the whole baked pizza
+        tl.to(assembledRef.current, { opacity: 1, duration: 0.05, ease: 'power1.out' }, REJOIN + REJOIN_DUR - 0.04);
+        tl.to(layerEls, { opacity: 0, duration: 0.05, ease: 'power1.in' }, REJOIN + REJOIN_DUR - 0.03);
+
+        // ── Phase 6 (0.84 → 1.00): Outro CTA appears, ready to scroll into next section
         tl.to(
           stackRef.current,
           {
-            y: () => -window.innerHeight * 0.075,
-            scale: 0.9,
-            ease: 'power2.inOut',
-            duration: 0.12,
+            y: () => -window.innerHeight * 0.065,
+            scale: 0.94,
+            ease: 'power2.out',
+            duration: 0.10,
           },
-          0.82
+          0.84
         );
         tl.to(
           outroRef.current,
-          { autoAlpha: 1, y: 0, ease: 'power2.out', duration: 0.1 },
+          { autoAlpha: 1, y: 0, ease: 'power2.out', duration: 0.09 },
           0.86
         );
-        tl.to({}, { duration: 0.04 }, 0.96);
+        tl.to({}, { duration: 0.05 }, 0.95);
       }, sectionRef);
 
       // ── Per-frame motion: pepperoni cloud + turntable layers ──
@@ -375,7 +386,22 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
       };
       window.addEventListener('resize', onResize, { passive: true });
 
+      let slicesAtRest = false;
+
       const frame = () => {
+        const e = motion.explode;
+        // Short-circuit when the pizza is assembled and separate layers are hidden (opacity 0)
+        if (e < 0.001) {
+          if (!slicesAtRest) {
+            slicesAtRest = true;
+            for (let i = 0; i < sliceEls.length; i++) {
+              sliceEls[i]!.style.transform = 'translate3d(0px, 0px, 0) rotate(0deg)';
+            }
+          }
+          return;
+        }
+        slicesAtRest = false;
+
         const t = (performance.now() - t0) / 1000;
         turners.forEach(({ cfg, set }, i) => {
           set(
@@ -392,7 +418,6 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
         const angle = motion.spin + t * 0.07;
         const cos = Math.cos(angle);
         const sin = Math.sin(angle);
-        const e = motion.explode;
         for (let i = 0; i < sliceEls.length; i++) {
           const s = SLICES[i]!;
           const reach = 1 + e * s.burst;
@@ -436,78 +461,18 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
       );
       visibility.observe(pinRef.current);
 
-      // ── Opening: the pizza builds itself once its images are decoded ──
-      const buildWrap = buildRef.current;
+      // ── Opening pose: pizza starts immediately with the slice in the air ──
       const baked = pinRef.current.querySelector<HTMLElement>('[data-baked]');
-      if (buildWrap && baked) {
-        const imgs = Array.from(buildWrap.querySelectorAll('img'));
-        await Promise.race([
-          Promise.all(imgs.map((img) => img.decode().catch(() => undefined))),
-          new Promise((resolve) => window.setTimeout(resolve, 2500)),
-        ]);
-        if (!isMounted) return;
-
-        baked.classList.remove('hero-pizza-wait');
-        // After the build: a slice lifts with its cheese strings and hovers
-        const lift = gsap.timeline({ paused: true });
-        lift
-          .to(baked, { '--lift-a': 1, duration: 1.0, ease: 'back.out(1.5)' })
-          .to(baked, {
-            '--lift-a': 0.84,
-            duration: 2.6,
-            ease: 'sine.inOut',
-            yoyo: true,
-            repeat: -1,
-          });
+      if (baked) {
+        gsap.set(baked, { autoAlpha: 1 });
+        const lift = gsap.timeline({ repeat: -1, yoyo: true });
+        lift.to(baked, {
+          '--lift-a': 0.82,
+          duration: 2.5,
+          ease: 'sine.inOut',
+        });
         liftTl = lift;
-
-        if (window.scrollY > 40) {
-          // Page opened already scrolled (reload, anchor): no theatrics
-          gsap.set(baked, { autoAlpha: 1 });
-          lift.play();
-        } else {
-          const part = (id: LayerId) =>
-            buildWrap.querySelector<HTMLElement>(`[data-build="${id}"]`);
-          gsap.set(baked, { autoAlpha: 0 });
-          gsap.set(buildWrap, { display: 'block', autoAlpha: 1 });
-
-          const build = gsap.timeline({
-            delay: 0.1,
-            onComplete: () => {
-              gsap.set(buildWrap, { display: 'none' });
-              lift.play();
-            },
-          });
-          build
-            .fromTo(
-              part('crust'),
-              { yPercent: -210, rotation: -16, autoAlpha: 0 },
-              { yPercent: 3, rotation: 0, autoAlpha: 1, duration: 0.75, ease: 'bounce.out' },
-              0
-            )
-            .fromTo(
-              part('sauce'),
-              { scale: 0.12, yPercent: 1, autoAlpha: 0 },
-              { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'power2.out' },
-              0.5
-            )
-            .fromTo(
-              part('cheese'),
-              { yPercent: -180, autoAlpha: 0 },
-              { yPercent: -1, autoAlpha: 1, duration: 0.5, ease: 'power2.in' },
-              0.8
-            )
-            .fromTo(
-              part('toppings'),
-              { yPercent: -220, rotation: 10, autoAlpha: 0 },
-              { yPercent: -3, rotation: 0, autoAlpha: 1, duration: 0.7, ease: 'bounce.out' },
-              1.15
-            )
-            // Out of the oven: cross-fade to the baked pizza
-            .to(baked, { autoAlpha: 1, duration: 0.35, ease: 'power1.inOut' }, 1.95)
-            .to(buildWrap, { autoAlpha: 0, duration: 0.35, ease: 'power1.inOut' }, 1.95);
-          buildTl = build;
-        }
+        lift.play();
       }
 
       // Pointer parallax: nearer layers travel further, which sells the depth.
@@ -540,7 +505,6 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
       removePointer?.();
       visibility?.disconnect();
       stopTicker?.();
-      buildTl?.kill();
       liftTl?.kill();
       ctx?.revert();
     };
@@ -593,6 +557,11 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
   };
 
   const assembledImage = '/images/pizzas-3d/pizza-pepperoni-v2.webp';
+  const pizzetaFrom = Math.min(...getPizzetas().map((p) => p.priceCents));
+  const promoChip =
+    locale === 'ca'
+      ? `Pizzetes des de ${formatCents(pizzetaFrom)} · paga’n ${PIZZETA_PROMO.pay}, emporta-te’n ${PIZZETA_PROMO.get}`
+      : `Pizzetas desde ${formatCents(pizzetaFrom)} · paga ${PIZZETA_PROMO.pay}, llévate ${PIZZETA_PROMO.get}`;
   const pizzaLabel = `Pizza ${pizza.name[locale]}`;
   const price = formatCents(pizza.priceCents);
 
@@ -710,9 +679,14 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
           ref={introRef}
           className="absolute inset-x-0 top-[calc(68px+3.5svh)] z-30 mx-auto max-w-2xl px-5 text-center"
         >
-          <p className="mb-2 text-[11px] font-bold tracking-[0.2em] text-[#F1B24A] uppercase sm:text-xs">
-            {copy.signatureHero.eyebrow}
-          </p>
+          <a
+            href="#pizzetas"
+            data-testid="hero-pizzeta-promo"
+            className="mb-3 inline-flex min-h-[32px] items-center gap-2 rounded-full border border-[#F1B24A]/50 bg-[#F1B24A]/12 px-3.5 py-1 text-xs font-bold text-[#F1B24A] transition-colors hover:bg-[#F1B24A]/22 sm:text-[13px]"
+          >
+            <span>{promoChip}</span>
+            <span aria-hidden="true">→</span>
+          </a>
           <h1
             id="exploded-pizza-heading"
             className="font-serif-heading text-[1.75rem] leading-[1.1] font-extrabold tracking-tight text-balance text-[#F9F4EC] sm:text-4xl md:text-[2.9rem]"
@@ -724,7 +698,7 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <a
-              href="#carta"
+              href={`/${locale}/carta`}
               className="btn-pill inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#F1B24A] px-8 py-2.5 text-sm font-extrabold text-[#14110F] shadow-[0_8px_24px_rgba(241,178,74,0.35)] transition-transform hover:scale-105 hover:bg-[#F5C065]"
             >
               {copy.heroStory.ctaMenu}
@@ -771,13 +745,13 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
           <div
             ref={stackRef}
             data-testid="exploded-pizza-layers"
-            className="relative aspect-[16/10] w-[min(580px,88vw,60svh)] [--spread:1.45] will-change-transform md:[--spread:1]"
+            className="relative aspect-[16/10] w-[min(560px,84vw,54svh)] [--spread:1.38] will-change-transform sm:w-[min(540px,70vw,56svh)] md:w-[min(480px,54vw,56svh)] md:[--spread:1] lg:w-[min(580px,50vw,60svh)]"
           >
             {/* Contact shadow */}
             <div
               ref={shadowRef}
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-[14%] bottom-[6%] z-0 h-[22%] rounded-[50%] bg-black/85 blur-2xl"
+              className="pointer-events-none absolute inset-x-[14%] bottom-[6%] z-0 h-[22%] rounded-[50%] bg-black/85 blur-xl md:blur-2xl"
             />
 
             {/* Steam curling up from behind the pizza */}
@@ -792,7 +766,7 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
                   viewBox="0 0 100 300"
                   preserveAspectRatio="none"
                   fill="none"
-                  className="steam-wisp absolute bottom-0 h-full"
+                  className={`steam-wisp absolute bottom-0 h-full ${i >= 2 ? 'hidden md:block' : ''}`}
                   style={
                     {
                       left: `${left}%`,
@@ -847,10 +821,10 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
               <div
                 data-parallax="0.6"
                 data-baked
-                className="hero-pizza-wait h-full w-full"
+                className="h-full w-full opacity-100"
                 style={
                   {
-                    '--lift-a': 0,
+                    '--lift-a': 1,
                     '--lift-s': 1,
                     '--lift': 'calc(var(--lift-a) * var(--lift-s))',
                   } as React.CSSProperties
@@ -927,29 +901,7 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
               </div>
             </div>
 
-            {/* Opening animation: ingredients dropping into place, bottom layer first */}
-            <div
-              ref={buildRef}
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 z-[60] hidden"
-            >
-              {[...LAYERS].reverse().map((layer) => (
-                <div
-                  key={layer.id}
-                  data-build={layer.id}
-                  className="invisible absolute inset-0 flex items-center justify-center will-change-transform"
-                >
-                  <img
-                    src={layer.src}
-                    alt=""
-                    width={1280}
-                    height={800}
-                    decoding="async"
-                    className={`${layer.widthClass} aspect-[16/10] object-contain drop-shadow-[0_18px_20px_rgba(0,0,0,0.7)]`}
-                  />
-                </div>
-              ))}
-            </div>
+
 
             {/* Separate ingredient layers */}
             {LAYERS.map((layer) => (
@@ -1018,6 +970,7 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
                             alt={layerAlt[layer.id]}
                             width={1280}
                             height={800}
+                            fetchPriority="low"
                             decoding="async"
                             className="h-full w-full object-contain"
                             style={{
@@ -1034,9 +987,10 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
                       alt={layerAlt[layer.id]}
                       width={1280}
                       height={800}
+                      fetchPriority="low"
                       decoding="async"
                       style={{ animationDelay: layer.bobDelay }}
-                      className="pizza-layer-bob h-full w-full object-contain drop-shadow-[0_18px_20px_rgba(0,0,0,0.7)]"
+                      className="pizza-layer-bob h-full w-full object-contain drop-shadow-[0_12px_14px_rgba(0,0,0,0.65)] md:drop-shadow-[0_18px_20px_rgba(0,0,0,0.7)]"
                     />
                   )}
                 </div>
@@ -1051,7 +1005,9 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
                 <div
                   key={c.layer}
                   className={`absolute z-50 -translate-y-1/2 ${
-                    isLeft ? 'right-[81%] md:right-[90%]' : 'left-[81%] md:left-[90%]'
+                    isLeft
+                      ? 'left-0 sm:left-auto sm:right-[76%] md:right-[88%]'
+                      : 'right-0 sm:right-auto sm:left-[76%] md:left-[88%]'
                   }`}
                   style={{ top: `calc(50% + ${layer.explodeY}% * var(--spread))` }}
                 >
@@ -1062,14 +1018,14 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
                     }`}
                   >
                     <div
-                      className={`w-[84px] sm:w-[120px] md:w-[176px] lg:w-[220px] ${
-                        isLeft ? 'text-right' : 'text-left'
+                      className={`w-[104px] rounded-xl border border-[#F9F4EC]/15 bg-[#14110F]/85 px-2.5 py-1.5 backdrop-blur-xs sm:w-[126px] sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none md:w-[172px] lg:w-[220px] ${
+                        isLeft ? 'text-left sm:text-right' : 'text-right sm:text-left'
                       }`}
                     >
-                      <p className="font-serif-heading text-lg leading-none font-extrabold text-[#F1B24A] md:text-2xl">
+                      <p className="font-serif-heading text-base leading-none font-extrabold text-[#F1B24A] sm:text-lg md:text-2xl">
                         0{i + 1}
                       </p>
-                      <p className="mt-1 text-[11px] leading-tight font-bold text-[#F9F4EC] [text-shadow:0_1px_8px_rgba(0,0,0,0.9)] md:text-base">
+                      <p className="mt-0.5 text-[11px] leading-tight font-bold text-[#F9F4EC] [text-shadow:0_1px_8px_rgba(0,0,0,0.9)] sm:mt-1 md:text-base">
                         {c.title}
                       </p>
                       <p className="mt-1 hidden text-xs leading-snug text-[#CBBBA8] md:block">
@@ -1084,7 +1040,7 @@ export function ExplodedPizza({ locale }: ExplodedPizzaProps) {
                     >
                       <span
                         data-callout-line
-                        className={`block w-14 border-t border-dashed border-[#F9F4EC]/70 lg:w-24 ${
+                        className={`block w-12 border-t border-dashed border-[#F9F4EC]/70 lg:w-24 ${
                           isLeft ? 'origin-left' : 'origin-right'
                         }`}
                       />

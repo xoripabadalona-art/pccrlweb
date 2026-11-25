@@ -4,8 +4,10 @@ import { getCopy, isValidLocale, locales, type Locale } from '@/data/copy';
 import { site } from '@/data/site';
 import { Navbar } from '@/components/ui/Navbar';
 import { ScrollProgressDots } from '@/components/ui/ScrollProgressDots';
-import { IntroCream } from '@/components/sections/IntroCream';
+import { Process } from '@/components/sections/Process';
+import { Pizzetas } from '@/components/sections/Pizzetas';
 import { ExplodedPizza } from '@/components/sections/ExplodedPizza';
+import { WhyPiccerella } from '@/components/sections/WhyPiccerella';
 import { MenuHighlights } from '@/components/sections/MenuHighlights';
 import { Story } from '@/components/sections/Story';
 import { Reviews } from '@/components/sections/Reviews';
@@ -17,6 +19,7 @@ import { FloatingWhatsApp } from '@/components/basket/FloatingWhatsApp';
 import {
   buildFaqJsonLd,
   buildRestaurantJsonLd,
+  buildVideoListJsonLd,
   JsonLd,
 } from '@/components/seo/JsonLd';
 import { AnalyticsAndConsent } from '@/components/seo/AnalyticsAndConsent';
@@ -90,13 +93,16 @@ export default async function LocaleHomePage({
     <>
       <JsonLd id="jsonld-restaurant" data={restaurantJsonLd} />
       <JsonLd id="jsonld-faq" data={faqJsonLd} />
+      <JsonLd id="jsonld-videos" data={buildVideoListJsonLd(locale)} />
 
       <Navbar locale={locale} currentPath="home" />
       <ScrollProgressDots />
 
       <main id="main-content" className="flex-1">
         <ExplodedPizza locale={locale} />
-        <IntroCream locale={locale} />
+        <Pizzetas locale={locale} />
+        <Process locale={locale} />
+        <WhyPiccerella locale={locale} />
         <MenuHighlights locale={locale} />
         <Story locale={locale} />
         <Reviews locale={locale} />

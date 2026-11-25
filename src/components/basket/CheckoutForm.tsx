@@ -13,6 +13,7 @@ import {
 } from '@/lib/whatsapp';
 import { trackEvent } from '@/lib/analytics';
 import { type EnrichedBasketItem, useBasketStore } from '@/store/basket';
+import { computePizzetaPromo } from '@/lib/promo';
 import { Button } from '@/components/ui/Button';
 
 export interface CheckoutFormProps {
@@ -25,15 +26,10 @@ export function CheckoutForm({ locale, enrichedItems }: CheckoutFormProps) {
   const notes = useBasketStore((s) => s.notes);
   const setNotes = useBasketStore((s) => s.setNotes);
 
-  const deliveryEnabled = site.serviceOptions.deliveryEnabled;
-
   const [customerName, setCustomerName] = useState('');
-  const [deliveryMode, setDeliveryMode] = useState<'pickup' | 'delivery'>('pickup');
-  const [address, setAddress] = useState('');
   const [preferredTime, setPreferredTime] = useState(copy.basket.timeAsap);
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
-    address?: string;
     basket?: string;
   }>({});
   const [submittedUrl, setSubmittedUrl] = useState<string | null>(null);
@@ -66,40 +62,46 @@ export function CheckoutForm({ locale, enrichedItems }: CheckoutFormProps) {
     [enrichedItems, locale]
   );
 
+  // The pizzeta promo goes into the message as its own line, so the shop
+  // reads the same total the customer saw in the basket.
+  const discount = useMemo(() => {
+    const promo = computePizzetaPromo(
+      enrichedItems.map((item) => ({
+        id: item.id,
+        size: item.size,
+        qty: item.qty,
+        unitPriceCents: item.unitPriceCents,
+      }))
+    );
+    if (promo.discountCents <= 0) return undefined;
+    return {
+      label: `${locale === 'ca' ? 'Promo pizzetes' : 'Promo pizzetas'} 5+1 (${promo.freeCount} gratis)`,
+      cents: promo.discountCents,
+    };
+  }, [enrichedItems, locale]);
+
   const previewOrder = useMemo(
     () =>
       buildWhatsAppOrderMessage({
         restaurantName: site.name,
         items: lineItems,
+        discount,
         customerName: customerName || (locale === 'ca' ? 'Client' : 'Cliente'),
-        deliveryMode,
-        address,
+        deliveryMode: 'pickup',
         preferredTime,
         notes,
         locale,
       }),
-    [lineItems, customerName, deliveryMode, address, preferredTime, notes, locale]
+    [lineItems, discount, customerName, preferredTime, notes, locale]
   );
 
   const checkoutSchema = useMemo(
     () =>
-      z
-        .object({
-          name: z.string().trim().min(1, copy.basket.validation.nameRequired),
-          deliveryMode: z.enum(['pickup', 'delivery']),
-          address: z.string().trim().optional(),
-          preferredTime: z.string().trim().min(1),
-          notes: z.string().optional(),
-        })
-        .superRefine((val, ctx) => {
-          if (val.deliveryMode === 'delivery' && (!val.address || val.address.length < 3)) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: ['address'],
-              message: copy.basket.validation.addressRequired,
-            });
-          }
-        }),
+      z.object({
+        name: z.string().trim().min(1, copy.basket.validation.nameRequired),
+        preferredTime: z.string().trim().min(1),
+        notes: z.string().optional(),
+      }),
     [copy]
   );
 
@@ -114,17 +116,14 @@ export function CheckoutForm({ locale, enrichedItems }: CheckoutFormProps) {
 
     const parsed = checkoutSchema.safeParse({
       name: customerName,
-      deliveryMode,
-      address,
       preferredTime,
       notes,
     });
 
     if (!parsed.success) {
-      const nextErrors: { name?: string; address?: string } = {};
+      const nextErrors: { name?: string } = {};
       for (const issue of parsed.error.issues) {
         if (issue.path[0] === 'name') nextErrors.name = issue.message;
-        if (issue.path[0] === 'address') nextErrors.address = issue.message;
       }
       setFieldErrors(nextErrors);
       return;
@@ -133,23 +132,23 @@ export function CheckoutForm({ locale, enrichedItems }: CheckoutFormProps) {
     const finalOrder = buildWhatsAppOrderMessage({
       restaurantName: site.name,
       items: lineItems,
+      discount,
       customerName: parsed.data.name,
-      deliveryMode: parsed.data.deliveryMode,
-      address: parsed.data.address,
+      deliveryMode: 'pickup',
       preferredTime: parsed.data.preferredTime,
       notes: parsed.data.notes,
       locale,
     });
 
-    // Use configured number or fallback preview link for E2E / fallback display
-    const effectiveNumber = hasWhatsappNumber ? whatsappNumber : '34934430737';
-    const waUrl = buildWhatsAppUrl(effectiveNumber, finalOrder.message);
+    const waUrl = hasWhatsappNumber
+      ? buildWhatsAppUrl(whatsappNumber, finalOrder.message)
+      : null;
     setSubmittedUrl(waUrl);
 
     trackEvent('whatsapp_order_click', {
       totalCents: finalOrder.totalCents,
       itemCount: enrichedItems.length,
-      deliveryMode: parsed.data.deliveryMode,
+      deliveryMode: 'pickup',
     });
 
     if (hasWhatsappNumber && waUrl && typeof window !== 'undefined') {
@@ -214,92 +213,15 @@ export function CheckoutForm({ locale, enrichedItems }: CheckoutFormProps) {
         )}
       </div>
 
-      {/* Pickup vs Delivery Mode */}
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-xs font-bold text-[#1A1512]">
+      {/* Pickup in Store badge (No delivery) */}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-xs font-bold text-[#1A1512]">
           {copy.basket.modeLabel}
-        </legend>
-
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <label
-            className={`flex min-h-[46px] cursor-pointer items-center gap-2.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors ${
-              deliveryMode === 'pickup'
-                ? 'border-[#14110F] bg-[#14110F] text-[#F9F4EC]'
-                : 'border-[#1A1512]/20 bg-[#FAF5ED] text-[#1A1512]'
-            }`}
-          >
-            <input
-              type="radio"
-              name="deliveryMode"
-              value="pickup"
-              checked={deliveryMode === 'pickup'}
-              onChange={() => setDeliveryMode('pickup')}
-              className="sr-only"
-            />
-            <span>🏪 {copy.basket.modePickup}</span>
-          </label>
-
-          {deliveryEnabled && (
-            <label
-              className={`flex min-h-[46px] cursor-pointer items-center gap-2.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors ${
-                deliveryMode === 'delivery'
-                  ? 'border-[#14110F] bg-[#14110F] text-[#F9F4EC]'
-                  : 'border-[#1A1512]/20 bg-[#FAF5ED] text-[#1A1512]'
-              }`}
-            >
-              <input
-                type="radio"
-                name="deliveryMode"
-                value="delivery"
-                checked={deliveryMode === 'delivery'}
-                onChange={() => setDeliveryMode('delivery')}
-                className="sr-only"
-              />
-              <span>🛵 {copy.basket.modeDelivery}</span>
-            </label>
-          )}
+        </span>
+        <div className="flex min-h-[46px] items-center gap-2.5 rounded-xl border border-[#14110F] bg-[#14110F] px-3.5 py-2 text-xs font-semibold text-[#F9F4EC]">
+          <span>🏪 {copy.basket.modePickup}</span>
         </div>
-
-        {!deliveryEnabled && (
-          <p className="rounded-xl bg-[#E5D7C3]/75 px-3 py-2 text-xs text-[#1A1512]">
-            {copy.basket.deliveryUberNotice}{' '}
-            <a
-              href={site.uberEatsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold underline decoration-[#C8372D] underline-offset-2"
-            >
-              Uber Eats ↗
-            </a>
-          </p>
-        )}
-      </fieldset>
-
-      {/* Delivery Address (only if deliveryEnabled and delivery selected) */}
-      {deliveryEnabled && deliveryMode === 'delivery' && (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="checkout-address" className="text-xs font-bold text-[#1A1512]">
-            {copy.basket.addressLabel}
-          </label>
-          <input
-            id="checkout-address"
-            name="address"
-            type="text"
-            required
-            autoComplete="street-address"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder={copy.basket.addressPlaceholder}
-            aria-invalid={Boolean(fieldErrors.address)}
-            className="min-h-[46px] rounded-xl border border-[#1A1512]/25 bg-[#FAF5ED] px-3.5 py-2 text-sm text-[#1A1512]"
-          />
-          {fieldErrors.address && (
-            <p role="alert" className="text-xs font-semibold text-[#C8372D]">
-              {fieldErrors.address}
-            </p>
-          )}
-        </div>
-      )}
+      </div>
 
       {/* Preferred Time Slot */}
       <div className="flex flex-col gap-1.5">
@@ -360,13 +282,23 @@ export function CheckoutForm({ locale, enrichedItems }: CheckoutFormProps) {
         )}
       </div>
 
-      {/* Missing NEXT_PUBLIC_WHATSAPP_NUMBER notice */}
+      {/* Direct phone call option when WhatsApp number is not yet configured */}
       {!hasWhatsappNumber && (
         <div
           role="status"
-          className="rounded-xl border border-[#EE6A2B]/50 bg-[#EE6A2B]/15 px-3.5 py-2.5 text-xs text-[#1A1512]"
+          className="flex flex-col gap-2 rounded-xl border border-[#EE6A2B]/40 bg-[#FAF5ED] p-3 text-xs text-[#1A1512]"
         >
-          {copy.basket.missingNumberWarning}
+          <p className="font-semibold">
+            {locale === 'ca'
+              ? `Pots encarregar directament per telèfon al ${site.phone} o copiar el resum de la teva comanda:`
+              : `Puedes encargar directamente por teléfono al ${site.phone} o copiar el resumen de tu pedido:`}
+          </p>
+          <a
+            href={`tel:${site.phoneTel}`}
+            className="btn-pill inline-flex min-h-[42px] items-center justify-center gap-2 rounded-full bg-[#14110F] px-4 py-2 text-xs font-extrabold text-[#F1B24A] hover:bg-[#2C221B]"
+          >
+            <span>📞 {locale === 'ca' ? 'Trucar ara:' : 'Llamar ahora:'} {site.phone}</span>
+          </a>
         </div>
       )}
 

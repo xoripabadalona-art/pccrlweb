@@ -61,7 +61,6 @@ export function Footer({ locale }: FooterProps) {
                   {site.phone}
                 </a>
               </p>
-              <p className="text-xs text-[#CBBBA8]">{site.phoneTodo}</p>
             </address>
           </div>
 
@@ -72,13 +71,8 @@ export function Footer({ locale }: FooterProps) {
             </h2>
             <ul className="flex flex-col gap-2.5 text-sm">
               <li>
-                <Link href={`${homePrefix}#carta`} className="hover:text-[#EE6A2B]">
-                  {copy.nav.menu}
-                </Link>
-              </li>
-              <li>
                 <Link href={`${homePrefix}/carta`} className="hover:text-[#EE6A2B]">
-                  {copy.nav.fullMenuPage} (/carta)
+                  {locale === 'ca' ? 'La Carta' : 'La Carta'}
                 </Link>
               </li>
               <li>
@@ -154,20 +148,19 @@ export function Footer({ locale }: FooterProps) {
                   <span aria-hidden="true">↗</span>
                 </a>
               </li>
-              <li>
-                <a
-                  href={site.uberEatsUrl}
-                  target="_blank"
-                  rel="me noopener noreferrer"
-                  className="inline-flex items-center gap-2 hover:text-[#EE6A2B]"
-                >
-                  <span>Uber Eats</span>
-                  <span aria-hidden="true">↗</span>
-                </a>
-              </li>
-              <li className="text-xs text-[#CBBBA8]">
-                Facebook: {site.facebook}
-              </li>
+              {site.facebook.startsWith('http') && (
+                <li>
+                  <a
+                    href={site.facebook}
+                    target="_blank"
+                    rel="me noopener noreferrer"
+                    className="inline-flex items-center gap-2 hover:text-[#EE6A2B]"
+                  >
+                    <span>Facebook</span>
+                    <span aria-hidden="true">↗</span>
+                  </a>
+                </li>
+              )}
             </ul>
 
             <h2 className="mb-2 text-xs font-bold tracking-widest text-[#CBBBA8] uppercase">

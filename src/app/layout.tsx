@@ -25,6 +25,7 @@ const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lapiccerella.es').
   /\/$/,
   ''
 );
+const gscVerification = (process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? '').trim();
 
 export const viewport: Viewport = {
   themeColor: '#14110F',
@@ -37,6 +38,7 @@ export const metadata: Metadata = {
   title: copyEs.seo.homeTitle,
   description: copyEs.seo.homeDescription,
   applicationName: site.name,
+  ...(gscVerification ? { verification: { google: gscVerification } } : {}),
   icons: {
     icon: '/brand/logo.png',
     apple: '/brand/logo.png',

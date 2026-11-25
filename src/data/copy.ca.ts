@@ -5,10 +5,10 @@ export const copyCa: LocaleCopy = {
   seo: {
     homeTitle: 'Pizzeria a Badalona · Pizza per emportar | La Piccerella',
     homeDescription:
-      'Pizzeria artesanal a Badalona (Carrer de Mar, 127). Pizzes, pizzetes des de 3 € i empanades argentines amb massa fermentada 48 h. Demana per WhatsApp.',
-    cartaTitle: 'Carta i Preus | La Piccerella Badalona',
+      'Pizza a Badalona acabada de fer al Carrer de Mar, 127. Pizzetes des de 3 € (Promo 5+1), Pizzes Grans (5 Stickers = 1 Gratis) i Pack 3 Pizzes Grans 34,99 €.',
+    cartaTitle: 'La Carta: Pizzes, Pizzetes 3€ i Preus | La Piccerella',
     cartaDescription:
-      'Consulta la carta completa de La Piccerella a Badalona: pizzes artesanals de massa fermentada 48 h, pizzetes, empanades tallades a ganivet i begudes.',
+      'Carta de La Piccerella a Badalona (Carrer de Mar, 127): 15 pizzes grans (5 Stickers = 1 Gratis), pizzetes des de 3 € (Promo 5+1) i Pack 3 Pizzes Grans 34,99 €.',
   },
   nav: {
     menu: 'Carta',
@@ -24,7 +24,7 @@ export const copyCa: LocaleCopy = {
   heroStory: {
     h1: 'La Piccerella, pizzeria artesanal a Badalona',
     subtitle:
-      'Pizzes i pizzetes artesanals amb massa fermentada 48 hores i empanades al moment al Carrer de Mar, 127.',
+      'Pizzes i pizzetes artesanals amb massa fermentada 48 hores fetes al moment al Carrer de Mar, 127.',
     ctaMenu: 'Veure la carta',
     ctaWhatsApp: 'Demanar per WhatsApp',
     slide1Label: 'La nostra façana al Carrer de Mar',
@@ -34,7 +34,7 @@ export const copyCa: LocaleCopy = {
   introCream: {
     eyebrow: 'Tradició, qualitat i sabor a Badalona',
     heading: 'Massa fermentada 48 hores, pizzes fetes al moment',
-    body: 'Al nostre obrador del Carrer de Mar estirem cada massa a mà per aconseguir una base fina, lleugera i cruixent. Des d’una porció Margarita acabada de sortir del forn per 3 € fins a pizzes grans i empanades de tradició argentina.',
+    body: 'Al nostre obrador del Carrer de Mar estirem cada massa a mà per aconseguir una base fina, lleugera i cruixent. Des d’una pizzeta Margarita acabada de sortir del forn per 3 € fins a 15 varietats de pizzes grans i el nostre pack familiar.',
     addButton: 'Afegir',
     viewAllLink: 'Veure tota la carta →',
   },
@@ -92,7 +92,7 @@ export const copyCa: LocaleCopy = {
   },
   menuSection: {
     eyebrow: 'La nostra carta',
-    heading: 'Pizzes, pizzetes i empanades a Badalona',
+    heading: 'Pizzes i pizzetes artesanals a Badalona',
     subheading:
       'Preus transparents del nostre local al Carrer de Mar, 127. Afegeix la teva selecció a la comanda i envia-la directament per WhatsApp.',
     viewFullPageLink: 'Obrir vista de carta completa (/carta)',
@@ -108,8 +108,8 @@ export const copyCa: LocaleCopy = {
     lead: 'En Gustavo et rep davant del forn al Carrer de Mar, 127 amb una proposta honesta: bona massa, bon producte i tracte proper.',
     bullets: [
       'Massa artesanal amb 48 hores de fermentació lenta, estirada i enfornada al moment.',
-      'Porció Margarita a 3 €, més de 14 varietats de pizza sencera (9,50 € – 13,00 €) i pack degustació familiar.',
-      'Herència argentina en les nostres empanades —com la de carn tallada a ganivet— fetes cada dia.',
+      'Pizzetes individuals des de 3 € (promo paga’n 5 i emporta-te’n 6), 15 varietats de pizza gran (9,50 € – 13,00 €) i pack degustació familiar.',
+      'Ingredients seleccionats de primeríssima qualitat: mozzarella fior di latte, salsa de tomàquet estesa a cullera i cocció al moment.',
     ],
     todoNotice:
       'TODO: Confirmar amb en Gustavo la seva cita personal i l’any exacte d’obertura per completar la història.',
@@ -156,7 +156,7 @@ export const copyCa: LocaleCopy = {
     drawerTitle: 'La teva comanda',
     closeLabel: 'Tancar cistella',
     emptyTitle: 'La teva comanda és buida',
-    emptyBody: 'Tria les teves pizzes, pizzetes o empanades preferides de la carta per preparar el teu missatge de WhatsApp.',
+    emptyBody: 'Tria les teves pizzes, pizzetes o packs preferits de la carta per preparar el teu missatge de WhatsApp.',
     browseMenuCta: 'Anar a la carta',
     closedBannerPrefix: 'Ara estem tancats, obrim a les ',
     closedBannerSuffix:
@@ -195,7 +195,7 @@ export const copyCa: LocaleCopy = {
   },
   footer: {
     tagline:
-      'Pizzeria artesanal a Badalona. Massa amb 48 hores de fermentació, ingredients de primeríssima qualitat i empanades.',
+      'Pizzeria artesanal a Badalona. Massa amb 48 hores de fermentació lenta, pizzes grans, pizzetes des de 3 € i ingredients de primeríssima qualitat.',
     navigationTitle: 'Navegació',
     contactTitle: 'Contacte',
     socialTitle: 'Segueix-nos',

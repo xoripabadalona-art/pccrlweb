@@ -26,6 +26,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# raw original client photos & videos (never push to public repo; public/ has optimized web assets)
+/assets/
+
 # env files
 .env*.local
 .env

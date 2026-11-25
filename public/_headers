@@ -1,0 +1,19 @@
+# Production Security & Cache Headers (Cloudflare Pages / Netlify compatible)
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/images/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/brand/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/videos/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400

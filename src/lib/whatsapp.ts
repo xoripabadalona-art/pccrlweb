@@ -19,6 +19,8 @@ export interface WhatsAppOrderInput {
   preferredTime: string;
   notes?: string;
   locale?: 'es' | 'ca';
+  /** A promotion already worked out by the basket: shown as its own line and taken off the total */
+  discount?: { label: string; cents: number };
 }
 
 export interface WhatsAppBuildResult {
@@ -103,6 +105,15 @@ export function buildWhatsAppOrderMessage(input: WhatsAppOrderInput): {
       : isCa
         ? 'Recollida al local'
         : 'Recogida en local';
+
+  const discountCents =
+    input.discount && input.discount.cents > 0
+      ? Math.min(Math.round(input.discount.cents), totalCents)
+      : 0;
+  if (input.discount && discountCents > 0) {
+    itemLines.push(`• ${input.discount.label} — -${formatCents(discountCents)}`);
+    totalCents -= discountCents;
+  }
 
   const lines: string[] = [
     header,

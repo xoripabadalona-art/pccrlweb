@@ -43,7 +43,6 @@ export function buildRestaurantJsonLd(locale: Locale) {
     site.tiktok,
     site.facebook,
     site.googleMapsUrl,
-    site.uberEatsUrl,
   ].filter((url) => url.startsWith('http'));
 
   const openingHoursSpecification = site.hours.map((interval) => ({
@@ -63,7 +62,7 @@ export function buildRestaurantJsonLd(locale: Locale) {
     url: `${siteUrl}/${locale}`,
     telephone: site.phone,
     priceRange: site.priceRange,
-    servesCuisine: ['Pizza', 'Italian', 'Argentinian'],
+    servesCuisine: ['Pizza', 'Italian'],
     acceptsReservations: false,
     address: {
       '@type': 'PostalAddress',
@@ -78,10 +77,28 @@ export function buildRestaurantJsonLd(locale: Locale) {
     sameAs,
     hasMap: getGoogleMapsUrl(),
     hasMenu: `${siteUrl}/${locale}/carta`,
-    areaServed: {
-      '@type': 'City',
-      name: site.addressStructured.addressLocality,
-    },
+    areaServed: [
+      {
+        '@type': 'City',
+        name: site.addressStructured.addressLocality,
+      },
+      {
+        '@type': 'AdministrativeArea',
+        name: 'Centre, Badalona',
+      },
+      {
+        '@type': 'AdministrativeArea',
+        name: 'Casagemes, Badalona',
+      },
+      {
+        '@type': 'AdministrativeArea',
+        name: 'Dalt de la Vila, Badalona',
+      },
+    ],
+    keywords:
+      locale === 'ca'
+        ? 'pizzeria a Badalona, pizza a Badalona, pizza per emportar Badalona, pizzetes Badalona, pizzeria Carrer de Mar Badalona, pizzes esdeveniments Badalona'
+        : 'pizzería en Badalona, pizza en Badalona, pizza para llevar Badalona, pizzetas Badalona, pizzería Carrer de Mar Badalona, pizzas eventos y mayoreo Badalona',
     openingHoursSpecification,
     // Ordering starts on the menu page: pick the items there, send them by WhatsApp, collect in store
     potentialAction: {
@@ -164,6 +181,25 @@ export function buildFaqJsonLd(locale: Locale) {
   };
 }
 
+export function buildLandingFaqJsonLd(
+  pageUrl: string,
+  faqs: { question: string; answer: string }[]
+) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    '@id': `${pageUrl}#faq-schema`,
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+}
+
 /** Offers for a hand-picked set of dishes, for the focused landing pages */
 export function buildItemListJsonLd(locale: Locale, pageUrl: string, itemIds: string[]) {
   const items = itemIds
@@ -188,6 +224,56 @@ export function buildItemListJsonLd(locale: Locale, pageUrl: string, itemIds: st
           priceCurrency: 'EUR',
           availability: 'https://schema.org/InStock',
         },
+      },
+    })),
+  };
+}
+
+export function buildVideoListJsonLd(locale: Locale) {
+  const isCa = locale === 'ca';
+  const videos = [
+    {
+      id: 'video-pizzetas-gustavo',
+      name: isCa
+        ? 'Pizzetes artesanals a Badalona des de 3 € (Promo 5+1) — La Piccerella Carrer de Mar'
+        : 'Pizzetas artesanales en Badalona desde 3 € (Promo 5+1) — La Piccerella Carrer de Mar',
+      description: isCa
+        ? 'En Gustavo prepara i enforna al moment les pizzetes individuals de 16 cm amb massa fermentada 48 hores a La Piccerella (Carrer de Mar, 127, Badalona).'
+        : 'Gustavo prepara y hornea al momento las pizzetas individuales de 16 cm con masa fermentada 48 horas en La Piccerella (Carrer de Mar, 127, Badalona).',
+      thumbnailUrl: `${siteUrl}/videos/pizzetas-gustavo-poster.webp`,
+      contentUrl: `${siteUrl}/videos/pizzetas-gustavo.mp4`,
+      duration: 'PT12S',
+    },
+    {
+      id: 'video-horno-piccerella',
+      name: isCa
+        ? 'Pizza artesanal per emportar a Badalona acabada de sortir del forn — La Piccerella'
+        : 'Pizza artesanal para llevar en Badalona recién salida del horno — La Piccerella',
+      description: isCa
+        ? 'Elaboració de pizza artesanal amb massa de 48 hores de fermentació lenta al nostre obrador del Carrer de Mar, 127, a 2 minuts de la platja de Badalona.'
+        : 'Elaboración de pizza artesanal con masa de 48 horas de fermentación lenta en nuestro obrador de Carrer de Mar, 127, a 2 minutos de la playa de Badalona.',
+      thumbnailUrl: `${siteUrl}/videos/proceso-3-horno-poster.webp`,
+      contentUrl: `${siteUrl}/videos/proceso-3-horno.mp4`,
+      duration: 'PT6S',
+    },
+  ];
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    '@id': `${siteUrl}/${locale}#videos-schema`,
+    itemListElement: videos.map((v, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      item: {
+        '@type': 'VideoObject',
+        '@id': `${siteUrl}/${locale}#${v.id}`,
+        name: v.name,
+        description: v.description,
+        thumbnailUrl: [v.thumbnailUrl],
+        contentUrl: v.contentUrl,
+        uploadDate: '2026-11-01T12:00:00+01:00',
+        duration: v.duration,
       },
     })),
   };

@@ -2,6 +2,7 @@ import React from 'react';
 import { site, type DayOfWeek } from '@/data/site';
 import { getCopy, type Locale } from '@/data/copy';
 import { OpenNowBadge } from '@/components/ui/OpenNowBadge';
+import { GoogleMapEmbed } from '@/components/ui/GoogleMapEmbed';
 
 export interface LocationProps {
   locale: Locale;
@@ -83,7 +84,11 @@ export function Location({ locale }: LocationProps) {
                 >
                   {site.phone}
                 </a>
-                <p className="mt-1 text-xs text-[#CBBBA8]">{site.phoneTodo}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#CBBBA8]">
+                  {locale === 'ca'
+                    ? 'A 2 min de la Rambla i la Platja de Badalona · Metro L2 Badalona Pompeu Fabra'
+                    : 'A 2 min de la Rambla y la Playa de Badalona · Metro L2 Badalona Pompeu Fabra'}
+                </p>
               </div>
 
               {/* Structured Opening Hours */}
@@ -113,11 +118,6 @@ export function Location({ locale }: LocationProps) {
                     );
                   })}
                 </dl>
-                {!site.hoursVerified && (
-                  <p className="mt-3 text-xs text-[#CBBBA8]">
-                    {copy.locationSection.hoursUnverifiedNote} ({site.hoursTodo})
-                  </p>
-                )}
               </div>
             </div>
 
@@ -129,16 +129,6 @@ export function Location({ locale }: LocationProps) {
                 className="btn-pill inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#EE6A2B] px-6 py-3 text-sm font-bold text-[#14110F] hover:bg-[#F37D44]"
               >
                 <span>{copy.locationSection.directionsButton}</span>
-                <span aria-hidden="true">↗</span>
-              </a>
-
-              <a
-                href={site.uberEatsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-pill inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#F9F4EC]/25 px-6 py-3 text-sm font-semibold text-[#F9F4EC] hover:bg-[#F9F4EC]/10"
-              >
-                <span>{copy.locationSection.deliveryUberEats}</span>
                 <span aria-hidden="true">↗</span>
               </a>
             </div>
@@ -184,6 +174,9 @@ export function Location({ locale }: LocationProps) {
             </div>
           </div>
         </div>
+
+        {/* Interactive Google Map pinned to Carrer de Mar, 127 */}
+        <GoogleMapEmbed locale={locale} className="mt-8" />
       </div>
     </section>
   );

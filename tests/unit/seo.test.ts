@@ -35,7 +35,7 @@ describe('SEO & Structured Data (Section 8)', () => {
     expect(
       (jsonLd.address as { streetAddress: string }).streetAddress
     ).toBe(site.addressStructured.streetAddress);
-    expect(jsonLd.servesCuisine).toEqual(['Pizza', 'Italian', 'Argentinian']);
+    expect(jsonLd.servesCuisine).toEqual(['Pizza', 'Italian']);
     expect(jsonLd.acceptsReservations).toBe(false);
     expect(jsonLd.hasMenu).toContain('/es/carta');
 

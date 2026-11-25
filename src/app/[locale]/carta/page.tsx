@@ -8,6 +8,7 @@ import { Menu } from '@/components/sections/Menu';
 import { Footer } from '@/components/sections/Footer';
 import { BasketDrawer } from '@/components/basket/BasketDrawer';
 import { FloatingWhatsApp } from '@/components/basket/FloatingWhatsApp';
+import { GoogleMapEmbed } from '@/components/ui/GoogleMapEmbed';
 import {
   buildBreadcrumbJsonLd,
   buildMenuJsonLd,
@@ -130,6 +131,41 @@ export default async function CartaPage({
 
         {/* Full indexable HTML Menu */}
         <Menu locale={locale} showFullPageLink={false} />
+
+        {/* Pickup Location Map at the bottom of the menu */}
+        <section
+          data-theme="dark"
+          aria-labelledby="carta-map-heading"
+          className="bg-[#14110F] py-14 text-[#F9F4EC]"
+        >
+          <div className="mx-auto max-w-7xl px-4 md:px-8">
+            <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-bold tracking-widest text-[#EE6A2B] uppercase">
+                  {locale === 'ca' ? 'Recollida al local' : 'Recogida en el local'}
+                </p>
+                <h2
+                  id="carta-map-heading"
+                  className="font-serif-heading mt-1 text-2xl font-bold md:text-3xl"
+                >
+                  {locale === 'ca'
+                    ? 'On recollir la teva comanda a Badalona'
+                    : 'Dónde recoger tu pedido en Badalona'}
+                </h2>
+              </div>
+              <p className="text-sm text-[#CBBBA8]">
+                {site.address} ·{' '}
+                <a
+                  href={`tel:${site.phoneTel}`}
+                  className="font-bold text-[#F1B24A] underline underline-offset-4"
+                >
+                  {site.phone}
+                </a>
+              </p>
+            </div>
+            <GoogleMapEmbed locale={locale} heightClass="h-[280px] md:h-[340px]" />
+          </div>
+        </section>
       </main>
 
       <Footer locale={locale} />
